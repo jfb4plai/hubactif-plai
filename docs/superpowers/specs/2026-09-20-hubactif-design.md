@@ -151,8 +151,9 @@ Guidage contextuel obligatoire sur chaque champ : label précis, placeholder con
 
 ### Décidé
 - **Apps pilotes** : Dictée interactive, LexiActif, FlashPLAI.
-- **Durée du jeton** : 120 h (§6).
-- **Cycle de vie des données** : le hub ne contient que des codes (aucun nom). Une **remise à zéro annuelle est proposée à partir du 15 juillet** (bandeau dans l'espace enseignant, déclenchée par l'enseignant, une action qui supprime élèves, cibles, événements, liens et notes de la classe). Pendant l'année, l'enseignant gère librement ses classes : ajout et suppression de classes, ajout et retrait d'élèves. Supprimer une classe supprime en cascade tout ce qui s'y rattache. De nouveaux codes sont générés chaque année. Les fiches locales des apps ne sont pas touchées par cette remise à zéro (elles relèvent de chaque app).
+- **Durée du jeton** : 120 h (§6). **Lien court** : valide jusqu'à l'échéance plus 30 jours, révocable.
+- **Domaines de départ** : Orthographe, Vocabulaire, Lecture, Grammaire, Mémorisation et révision (extensibles par l'enseignant, point de départ à affiner, pas un référentiel officiel FWB).
+- **Cycle de vie des données** : le hub ne contient que des codes (aucun nom). Une **remise à zéro annuelle est proposée à partir du 15 juillet** (bandeau dans l'espace enseignant, déclenchée par l'enseignant, une action qui supprime élèves, cibles, événements, liens et notes de la classe). **Purge automatique le 15 août** pour les classes non remises à zéro. À partir du 16 août, l'enseignant peut préparer sa nouvelle année (nouvelles classes, nouveaux codes). Pendant l'année, l'enseignant gère librement ses classes : ajout et suppression de classes, ajout et retrait d'élèves. Supprimer une classe supprime en cascade tout ce qui s'y rattache. De nouveaux codes sont générés chaque année. Les fiches locales des apps ne sont pas touchées par cette remise à zéro (elles relèvent de chaque app).
 - **Nom de projet Vercel** `hubactif-plai` : pas de crainte, vérifié à la création du projet.
 
 ### Règle sur les indicateurs (ré-identification)
@@ -164,12 +165,7 @@ Les apps envoient des indicateurs sous forme de paires libellé/valeur. Pour qu'
 Un événement hors schéma est rejeté et journalisé sans donnée personnelle.
 
 ### Encore ouvert
-1. **Durée de validité d'un lien court après l'échéance** : 30 jours proposé, révocable.
-2. **Liste initiale des domaines** (voir la proposition de départ ci-dessous, à confirmer).
-3. **Forme du bouton « Assigner via le hub »** dans chacune des trois apps pilotes.
-4. **Filet de sécurité de la remise à zéro** : purge automatique si l'enseignant n'a rien fait à une date donnée (par exemple fin août), ou seulement le rappel.
-
-Proposition de domaines pour la v1, tirée des trois apps pilotes, extensible par l'enseignant : Orthographe, Vocabulaire, Lecture, Grammaire, Mémorisation et révision. Cette liste est un point de départ à affiner, pas un référentiel officiel FWB.
+- **Forme du bouton « Assigner via le hub »** dans chacune des trois apps pilotes : à préciser dans le plan d'implémentation.
 
 ## 15. Questions challengeantes (réponses de conception)
 

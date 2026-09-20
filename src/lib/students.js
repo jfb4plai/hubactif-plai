@@ -40,7 +40,14 @@ export async function regenerateCode(studentId) {
   throw userError('Impossible de générer un code unique, réessayez.')
 }
 
+// Retrait doux : l'élève sort des assignations et de la grille, mais son historique est conservé
+// (changement de classe en cours d'année). La suppression définitive n'a lieu qu'à la remise à zéro annuelle.
 export async function removeStudent(studentId) {
-  const { error } = await supabase.from('hub_students').delete().eq('id', studentId)
+  const { error } = await supabase.from('hub_students').update({ active: false }).eq('id', studentId)
+  if (error) throw error
+}
+
+export async function reactivateStudent(studentId) {
+  const { error } = await supabase.from('hub_students').update({ active: true }).eq('id', studentId)
   if (error) throw error
 }

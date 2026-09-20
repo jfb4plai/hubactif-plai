@@ -48,8 +48,10 @@ test('refus : detail_url hors domaine de l’app ou invalide', () => {
   assert.equal(validateEvent({ ...base, detail_url: 'pas une url' }, app).ok, false)
 })
 
-test('refus : occurred_at invalide', () => {
-  assert.equal(validateEvent({ ...base, occurred_at: 'hier' }, app).ok, false)
+test('occurred_at illisible : événement conservé sans date', () => {
+  const r = validateEvent({ ...base, occurred_at: 'hier' }, app)
+  assert.equal(r.ok, true)
+  assert.equal(r.value.occurred_at, null)
 })
 
 const bad = (over, a = app) => validateEvent({ ...base, ...over }, a).ok === false
@@ -88,8 +90,9 @@ test('event_id renvoyé en minuscules', () => {
 test('occurred_at : chaîne, année 2020-2100', () => {
   assert.ok(bad({ occurred_at: 1790000000000 }))
   assert.ok(bad({ occurred_at: true }))
-  assert.ok(bad({ occurred_at: '1970-01-01T00:00:00Z' }))
-  assert.ok(bad({ occurred_at: '2200-01-01T00:00:00Z' }))
+  // Année hors bornes (horloge fausse) : événement conservé, date ignorée
+  assert.equal(validateEvent({ ...base, occurred_at: '1970-01-01T00:00:00Z' }, app).value.occurred_at, null)
+  assert.equal(validateEvent({ ...base, occurred_at: '2200-01-01T00:00:00Z' }, app).value.occurred_at, null)
   assert.equal(validateEvent({ ...base, occurred_at: '2026-09-21T10:00:00Z' }, app).ok, true)
 })
 

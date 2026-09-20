@@ -22,8 +22,9 @@ export function validateEvent(body, app) {
     if (typeof occurred_at !== 'string') return err('occurred_at invalide.')
     const d = new Date(occurred_at)
     const year = d.getUTCFullYear()
-    if (Number.isNaN(d.getTime()) || year < 2020 || year > 2100) return err('occurred_at invalide.')
-    occurredAt = d.toISOString()
+    // Horloge d'appareil fausse (tablette d'école réinitialisée) : l'événement reste valable, on ignore la date
+    // et le hub retombe sur son heure (hub_record_event : coalesce(p_occurred, now())).
+    if (!Number.isNaN(d.getTime()) && year >= 2020 && year <= 2100) occurredAt = d.toISOString()
   }
 
   for (const [name, value, max] of [['duration_s', duration_s, 86400], ['attempts', attempts, 1000]]) {

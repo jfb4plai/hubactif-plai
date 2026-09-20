@@ -85,6 +85,8 @@ Les seuils sont larges : une classe entière partage l'IP de l'école.
 
 ## 5. Limites à connaître
 
+- **Référent** : le jeton voyage dans l'adresse (`?t=`). La page de l'app qui le reçoit doit envoyer l'en-tête `Referrer-Policy: no-referrer` (dans son `vercel.json`) : le SDK retire le jeton de la barre d'adresse après le chargement, mais la première requête de la page a pu le transmettre à une ressource tierce.
+- **Purge annuelle** : le hub supprime les classes non remises à zéro à partir du 15 août (cron quotidien en août, refusé avant le 15). Les fiches locales des apps ne sont pas touchées : elles relèvent de chaque app.
 - **Confiance** : le statut est déclaré par le client de l'app. La clé d'app et le jeton empêchent un tiers de forger des événements ; ils n'empêchent pas un élève technique de rejouer son propre jeton. Enjeu faible (pas de note), mais ne jamais utiliser ces données comme preuve.
 - Le jeton dure 120 h ; le SDK le lit sans vérifier la signature, le hub la vérifie à chaque événement.
 - Le hub en panne ne bloque pas la tâche : les événements sont remis en file et renvoyés.

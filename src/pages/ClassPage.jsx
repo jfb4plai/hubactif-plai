@@ -57,7 +57,7 @@ export default function ClassPage() {
         </details>
       </div>
       <ResetBanner cls={cls} onDone={load} />
-      <StudentsPanel classId={classId} students={students} onChange={load} />
+      <StudentsPanel classId={classId} cls={cls} students={students} onChange={load} />
       <section className="hub-stack">
         <h2>Tâches et suivi</h2>
         <div className="hub-row">
@@ -65,7 +65,7 @@ export default function ClassPage() {
             to={`/enseignant/assigner?class=${classId}`}>Assigner une tâche</Link>
         </div>
         <NoScoreBanner />
-        <ClassGrid classId={classId} students={students} assignments={assignments} targets={targets} domains={domains} apps={apps} />
+        <ClassGrid classId={classId} students={students.filter((s) => s.active)} assignments={assignments} targets={targets} domains={domains} apps={apps} />
       </section>
       <div><button className="plai-btn-ghost" onClick={deleteClass}>Supprimer cette classe</button></div>
     </div>

@@ -22,9 +22,15 @@ if (!(parsedUrl.protocol === 'https:' || (parsedUrl.protocol === 'http:' && pars
   fail('base_url invalide : https obligatoire (http seulement pour localhost).')
 }
 
+// Mêmes bornes que shared/eventSchema.js : un libellé plus long serait refusé à chaque événement.
+const indicatorLabels = labels.split('|').map((l) => l.trim()).filter(Boolean)
+if (indicatorLabels.length > 10) fail('Trop de libellés d’indicateurs (10 au maximum).')
+const tooLong = indicatorLabels.find((l) => l.length > 40)
+if (tooLong) fail(`Libellé d’indicateur trop long (40 caractères au maximum) : « ${tooLong.slice(0, 20)}… ».`)
+if (new Set(indicatorLabels).size !== indicatorLabels.length) fail('Libellés d’indicateurs en double.')
+
 const admin = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY, { auth: { persistSession: false } })
 const key = `hubkey_${b64uEncode(randomBytes(32))}`
-const indicatorLabels = labels.split('|').map((l) => l.trim()).filter(Boolean)
 
 const { error } = await admin.from('hub_apps').insert({
   slug, name, base_url: baseUrl.replace(/\/$/, ''), key_hash: sha256Hex(key), indicator_labels: indicatorLabels,

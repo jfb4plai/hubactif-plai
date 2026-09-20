@@ -154,7 +154,7 @@ export default function AssignPage() {
         ))}
       </fieldset>
 
-      <Field id="due" label="Pour le (facultatif)" help="Après cette date, la tâche apparaît « en retard » dans votre grille. Les liens restent valables 30 jours de plus.">
+      <Field id="due" label="Pour le (facultatif)" help="Après cette date, la tâche apparaît « en retard » dans votre grille. Les liens restent valables 30 jours de plus. Sans date, le lien reste valable jusqu’à la remise à zéro annuelle.">
         <input id="due" type="date" className="plai-input" style={{ maxWidth: 220 }} aria-describedby="due-help" value={due} onChange={(e) => setDue(e.target.value)} />
       </Field>
       <Field id="domain" label="Domaine (facultatif)" help="Étiquette qui regroupe cette tâche avec celles des autres apps dans la fiche de l’élève. C’est votre intention pédagogique.">

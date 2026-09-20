@@ -143,8 +143,17 @@ try {
   const { data: clsAfter } = await admin.from('hub_classes').select('last_reset_at').eq('id', cls.id).single()
   check('remise à zéro : élèves et assignations supprimés, classe conservée', nStudents === 0 && nAssign === 0 && !!clsAfter.last_reset_at)
 
+  // Classe créée à l'instant, avec un élève : la purge ne doit jamais la toucher.
+  const { data: fresh, error: eFresh } = await A.client.from('hub_classes')
+    .insert({ teacher_id: A.id, name: 'Classe test récente', class_code: generateCode(6) }).select().single()
+  assert.ifError(eFresh)
+  await A.client.from('hub_students').insert({ class_id: fresh.id, code: generateCode() })
+  // Hors fenêtre (avant le 15 août) la purge refuse de s'exécuter : les deux issues sont normales.
   const { data: purged, error: ePurge } = await admin.rpc('hub_purge_stale')
-  check('purge (service) s’exécute', !ePurge && Number.isInteger(purged))
+  check('purge (service) s’exécute ou refuse hors fenêtre',
+    (!ePurge && Number.isInteger(purged)) || /purge_window_closed/.test(ePurge?.message ?? ''))
+  const { count: nFresh } = await admin.from('hub_students').select('*', { count: 'exact', head: true }).eq('class_id', fresh.id)
+  check('purge : une classe créée à l’instant n’est pas purgée', nFresh === 1)
 } finally {
   // Comptes d'abord (la cascade supprime les assignations), puis l'app de test (hub_assignments.app_id la référence).
   for (const id of users) await admin.auth.admin.deleteUser(id)

@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext.jsx'
 import Field from '../components/Field.jsx'
 import { friendlyError, userError } from '../lib/errors.js'
 import { generateCode, CLASS_CODE_LENGTH } from '../../shared/codes.js'
+import { needsReset } from '../../shared/dates.js'
 
 export default function ClassesPage() {
   const { user } = useAuth()
@@ -38,9 +39,24 @@ export default function ClassesPage() {
     }
   }
 
+  const toReset = (classes ?? []).filter((c) =>
+    needsReset(new Date(), { createdAt: c.created_at, lastResetAt: c.last_reset_at }))
+
   return (
     <div className="hub-stack">
       <h1 style={{ fontFamily: "'DM Serif Display', serif" }}>Mes classes</h1>
+      {toReset.length > 0 && (
+        <div className="plai-banner" role="region" aria-label="Remise à zéro de fin d’année" style={{ borderRadius: 6 }}>
+          <p>
+            Fin d’année : {toReset.length} classe(s) à remettre à zéro avant le 15 août, sans quoi leurs données seront supprimées automatiquement.
+          </p>
+          <ul>
+            {toReset.map((c) => (
+              <li key={c.id}><Link to={`/enseignant/classes/${c.id}`}>{c.name}</Link></li>
+            ))}
+          </ul>
+        </div>
+      )}
       {error && <div className="plai-error" role="alert">{error}</div>}
       {classes === null ? <p className="plai-empty">Chargement…</p> : classes.length === 0 ? (
         <p className="plai-empty">Aucune classe pour l’instant. Créez la première ci-dessous.</p>

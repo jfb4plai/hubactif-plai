@@ -69,6 +69,7 @@ export default function StudentFilePage() {
     <div className="hub-stack">
       <p><Link to={`/enseignant/classes/${classId}`}>← Retour à la classe</Link></p>
       <h1 style={{ fontFamily: "'DM Serif Display', serif" }}>Élève <span className="hub-code">{student.code}</span></h1>
+      <p className="hub-help">Cette page rassemble tout ce que les apps ont signalé pour cet élève, tel quel et sans interprétation. Les tâches sont rangées par domaine (le thème que vous avez choisi en les donnant).</p>
       <NoScoreBanner />
       <div className={error ? 'plai-error' : undefined} role="alert">{error}</div>
       <div className={newLink ? 'plai-success' : undefined} role="status" aria-live="polite">{newLink && <>Nouveau lien : <span className="hub-code">{newLink}</span></>}</div>
@@ -89,7 +90,7 @@ export default function StudentFilePage() {
                   <span aria-hidden="true">{STATUS_ICON[t.status]}</span>{STATUS_LABEL[t.status]}
                   {isLate(now, a.due_at, t.status) && ' · en retard'}
                 </span>
-                {events.length === 0 ? <p className="hub-help">Aucun événement reçu de l’app pour l’instant.</p> : (
+                {events.length === 0 ? <p className="hub-help">Rien reçu de l’app pour l’instant : l’élève n’a peut-être pas encore commencé, ou l’app ne renvoie pas encore d’informations.</p> : (
                   <ul>
                     {events.map((ev) => (
                       <li key={ev.event_id}>
@@ -102,7 +103,10 @@ export default function StudentFilePage() {
                     ))}
                   </ul>
                 )}
-                <div><button className="plai-btn-ghost" onClick={() => regenerate(t.id)}>Nouveau lien / QR</button></div>
+                <div>
+                  <button className="plai-btn-ghost" onClick={() => regenerate(t.id)}>Nouveau lien / QR</button>
+                  <p className="hub-help">À utiliser si l’élève a perdu sa carte ou si son lien a été partagé : l’ancien lien et l’ancien QR code s’arrêtent de fonctionner. Réimprimez ensuite la feuille de la tâche.</p>
+                </div>
               </div>
             )
           })}

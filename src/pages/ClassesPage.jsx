@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase.js'
 import { must } from '../lib/db.js'
 import { useAuth } from '../context/AuthContext.jsx'
 import Field from '../components/Field.jsx'
+import Callout from '../components/Callout.jsx'
 import { friendlyError, userError } from '../lib/errors.js'
 import { generateCode, CLASS_CODE_LENGTH } from '../../shared/codes.js'
 import { needsReset } from '../../shared/dates.js'
@@ -59,7 +60,14 @@ export default function ClassesPage() {
       )}
       {error && <div className="plai-error" role="alert">{error}</div>}
       {classes === null ? <p className="plai-empty">Chargement…</p> : classes.length === 0 ? (
-        <p className="plai-empty">Aucune classe pour l’instant. Créez la première ci-dessous.</p>
+        <Callout title="Bienvenue ! Pour démarrer, trois étapes">
+          <ol className="hub-steps">
+            <li><strong>Créez votre classe</strong> avec le formulaire ci-dessous (donnez-lui le nom que vous voulez).</li>
+            <li><strong>Ajoutez vos élèves</strong> : HubActif fabrique un code par élève. Vous n’enregistrez aucun nom.</li>
+            <li><strong>Donnez une tâche</strong> depuis une app PLAI branchée sur HubActif.</li>
+          </ol>
+          <p>Un doute ? <Link to="/aide">Lisez l’aide pas à pas</Link>.</p>
+        </Callout>
       ) : classes.map((c) => (
         <div className="plai-card" key={c.id}>
           <Link to={`/enseignant/classes/${c.id}`}><strong>{c.name}</strong></Link>

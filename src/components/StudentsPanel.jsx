@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import Field from './Field.jsx'
+import Callout from './Callout.jsx'
 import { friendlyError } from '../lib/errors.js'
 import { addGeneratedCodes, addPastedCodes, reactivateStudent, regenerateCode, removeStudent } from '../lib/students.js'
 
@@ -27,8 +28,8 @@ export default function StudentsPanel({ classId, cls, students: all, onChange })
   const paste = () => run(async () => {
     const { added, conflicts, invalid } = await addPastedCodes(classId, pasted)
     const parts = [`${added.length} code(s) ajouté(s).`]
-    if (conflicts.length) parts.push(`Déjà utilisés ailleurs (refusés) : ${conflicts.join(', ')}.`)
-    if (invalid.length) parts.push(`Format invalide (refusés) : ${invalid.join(', ')}.`)
+    if (conflicts.length) parts.push(`Codes refusés, car déjà pris par une autre classe de HubActif : ${conflicts.join(', ')}. Choisissez d’autres codes, ou cliquez sur « Générer les codes » : HubActif en fabrique des uniques.`)
+    if (invalid.length) parts.push(`Codes refusés (3 à 32 caractères : lettres, chiffres, tiret) : ${invalid.join(', ')}.`)
     setMessage(parts.join(' '))
     setPasted('')
   })
@@ -42,18 +43,21 @@ export default function StudentsPanel({ classId, cls, students: all, onChange })
   }
 
   return (
-    <section className="hub-stack">
+    <section className="hub-stack" id="eleves">
       <h2>Élèves ({students.length})</h2>
+      <Callout title="Pourquoi des codes et pas des noms ?">
+        <p>Pour protéger vos élèves, HubActif ne connaît que des codes. <strong>Vous seul</strong> savez qui se cache derrière chaque code : imprimez la liste (bouton plus bas) et écrivez les prénoms à la main, sur papier.</p>
+      </Callout>
       <div className="plai-card hub-stack">
         <Field id="count" label="Nombre de codes à générer"
-          help="Un code anonyme par élève (8 caractères). HubActif ne stocke aucun nom : gardez vous-même la liste code et élève.">
+          help="Un code par élève. HubActif fabrique des codes faciles à recopier (jamais de 0, de O, de 1, de I ni de L, qui se ressemblent). Comptez un code par élève de la classe.">
           <input id="count" type="number" min="1" max="60" className="plai-input" style={{ maxWidth: 140 }}
             aria-describedby="count-help" placeholder="Ex. 24" value={count} onChange={(e) => setCount(e.target.value)} />
         </Field>
         <button className="plai-btn" onClick={generate} disabled={busy}>Générer les codes</button>
 
         <Field id="pasted" label="Ou coller des codes existants"
-          help="Un code par ligne, comme dans vos autres apps PLAI (ex. Mathipulatifs). Vos élèves gardent leurs codes habituels. Un code déjà utilisé dans une autre classe est refusé.">
+          help="Facultatif : si vos élèves ont déjà des codes dans une autre app PLAI (ex. Mathipulatifs), collez-les, un par ligne : ils gardent leurs habitudes. Un code déjà pris par une autre classe de HubActif est refusé : dans ce cas, cliquez plutôt sur « Générer les codes ».">
           <textarea id="pasted" rows={4} className="plai-input" aria-describedby="pasted-help"
             placeholder={'ELEVE01\nELEVE02\nELEVE03'} value={pasted} onChange={(e) => setPasted(e.target.value)} />
         </Field>
@@ -81,7 +85,7 @@ export default function StudentsPanel({ classId, cls, students: all, onChange })
                   <td className="hub-row">
                     <button className="plai-btn-ghost" disabled={busy}
                       onClick={() => window.confirm('Donner un nouveau code à cet élève ? L’ancien code cessera de fonctionner.') && run(() => regenerateCode(s.id))}>
-                      Nouveau code (perdu)
+                      Nouveau code
                     </button>
                     <button className="plai-btn-ghost" disabled={busy}
                       onClick={() => window.confirm('Retirer cet élève de la classe ? Son historique est conservé et vous pourrez le réactiver.') && run(() => removeStudent(s.id))}>
@@ -93,6 +97,7 @@ export default function StudentsPanel({ classId, cls, students: all, onChange })
             </tbody>
           </table>
         </div>
+        <p className="hub-help hub-noprint">« Nouveau code » : à utiliser si un élève a perdu son code (l’ancien ne marche plus). « Retirer » : l’élève quitte la classe, son historique est conservé et vous pouvez le réactiver. Cliquez sur un code pour ouvrir la fiche de l’élève.</p>
         </>
       )}
 

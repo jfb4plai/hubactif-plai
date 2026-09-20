@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase.js'
 import { must } from '../lib/db.js'
 import QrImage from '../components/QrImage.jsx'
+import Callout from '../components/Callout.jsx'
 import { pickLiveLink } from '../lib/links.js'
 import { friendlyError } from '../lib/errors.js'
 
@@ -43,6 +44,14 @@ export default function SheetPage() {
           {missing.length} élève(s) sans lien valide : régénérez leur lien depuis leur fiche. Codes : {missing.join(', ')}.
         </div>
       )}
+      <Callout title="Comment utiliser cette feuille">
+        <ol className="hub-steps">
+          <li>Cliquez sur « Imprimer ».</li>
+          <li>Découpez chaque carte le long des pointillés.</li>
+          <li>Donnez une carte à chaque élève. Il scanne le QR code avec l’appareil photo d’une tablette ou d’un téléphone, ou tape l’adresse écrite sous le QR code.</li>
+        </ol>
+        <p><strong>Attention :</strong> chaque carte est personnelle. Ne l’affichez pas au tableau et ne mélangez pas les cartes de plusieurs classes. Si une carte est perdue, ouvrez la fiche de l’élève et cliquez sur « Nouveau lien / QR ».</p>
+      </Callout>
       <h1 style={{ fontFamily: "'DM Serif Display', serif" }}>{assignment.title}</h1>
       <p>Espace élève : <strong>{origin}</strong> · code de classe <span className="hub-code">{assignment.hub_classes.class_code}</span></p>
       <div className="hub-sheet hub-student">

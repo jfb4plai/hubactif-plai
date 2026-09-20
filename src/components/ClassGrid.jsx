@@ -58,6 +58,11 @@ export default function ClassGrid({ classId, students, assignments, targets, dom
         </table>
       </div>
       )}
+      <p className="hub-help">
+        <strong>○ Assigné</strong> : la tâche est donnée, l’élève ne l’a pas ouverte. <strong>◐ Commencé</strong> : l’élève l’a ouverte.
+        {' '}<strong>● Terminé</strong> : l’app signale la fin de la tâche (cela ne dit pas si l’élève a réussi ou compris).
+        {' '}<strong>En retard</strong> : la date limite est passée et la tâche n’est pas terminée. « — » : la tâche n’a pas été donnée à cet élève.
+      </p>
     </div>
   )
 }

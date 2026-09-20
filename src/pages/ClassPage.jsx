@@ -7,6 +7,8 @@ import StudentsPanel from '../components/StudentsPanel.jsx'
 import ClassGrid from '../components/ClassGrid.jsx'
 import NoScoreBanner from '../components/NoScoreBanner.jsx'
 import QrImage from '../components/QrImage.jsx'
+import NextStep from '../components/NextStep.jsx'
+import Callout from '../components/Callout.jsx'
 import { friendlyError } from '../lib/errors.js'
 
 export default function ClassPage() {
@@ -47,23 +49,36 @@ export default function ClassPage() {
     <div className="hub-stack">
       <p><Link to="/enseignant">← Mes classes</Link></p>
       <h1 style={{ fontFamily: "'DM Serif Display', serif" }}>{cls.name}</h1>
-      <div className="plai-card">
-        <p>Code de classe à donner à vos élèves : <span className="hub-code">{cls.class_code}</span></p>
-        <p className="hub-help">Sur la page d’accueil de HubActif, chaque élève saisit ce code et son code personnel pour retrouver ses tâches.</p>
+      <NextStep classId={classId} students={students} assignments={assignments} targets={targets} hasApps={apps.length > 0} />
+      <ResetBanner cls={cls} onDone={load} />
+      <div className="plai-card hub-stack">
+        <h2 style={{ fontSize: 20 }}>Ce que vous dites à vos élèves</h2>
+        <ol className="hub-steps">
+          <li>Ouvrez l’adresse <strong>{window.location.host}</strong> (sur une tablette, un ordinateur ou un téléphone).</li>
+          <li>Tapez le code de classe : <span className="hub-code">{cls.class_code}</span></li>
+          <li>Tapez votre code personnel, celui de votre carte ou de votre feuille.</li>
+        </ol>
         <details>
-          <summary>QR code de la classe</summary>
+          <summary>Projeter ou imprimer le QR code de la classe</summary>
           <QrImage text={`${window.location.origin}/?c=${cls.class_code}`} size={180} alt="QR code d’accès de la classe" />
-          <p className="hub-help">Les élèves le scannent : le code de classe est déjà rempli, ils tapent seulement leur code personnel.</p>
+          <p className="hub-help">Un QR code est un carré que l’on scanne avec l’appareil photo. Celui-ci ouvre HubActif avec le code de classe déjà rempli : l’élève tape seulement son code personnel.</p>
         </details>
       </div>
-      <ResetBanner cls={cls} onDone={load} />
       <StudentsPanel classId={classId} cls={cls} students={students} onChange={load} />
-      <section className="hub-stack">
+      <section className="hub-stack" id="taches">
         <h2>Tâches et suivi</h2>
-        <div className="hub-row">
-          <Link className="plai-btn" style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}
-            to={`/enseignant/assigner?class=${classId}`}>Assigner une tâche</Link>
-        </div>
+        {apps.length > 0 ? (
+          <div className="hub-row">
+            <Link className="plai-btn" style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}
+              to={`/enseignant/assigner?class=${classId}`}>Assigner une tâche</Link>
+            <span className="hub-help">Astuce : depuis l’app PLAI, le bouton « Assigner via le hub » remplit ce formulaire à votre place.</span>
+          </div>
+        ) : (
+          <Callout title="Aucune app PLAI n’est encore branchée à HubActif">
+            <p>Une app « branchée » affiche un bouton <strong>« Assigner via le hub »</strong> : un clic, et la tâche est donnée à votre classe. Les premières apps sont branchées une à une.</p>
+            <p>En attendant, votre classe et vos codes sont prêts : vous n’aurez rien à refaire.</p>
+          </Callout>
+        )}
         <NoScoreBanner />
         <ClassGrid classId={classId} students={students.filter((s) => s.active)} assignments={assignments} targets={targets} domains={domains} apps={apps} />
       </section>

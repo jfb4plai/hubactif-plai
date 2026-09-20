@@ -17,6 +17,7 @@ export default function Layout({ children }) {
         <div className="plai-nav-actions">
           <Link className="plai-nav-link" to="/">Espace élève</Link>
           <Link className="plai-nav-link" to="/enseignant">Espace enseignant</Link>
+          <Link className="plai-nav-link" to="/aide">Aide</Link>
           {user && <button className="plai-nav-link" onClick={signOut}>Se déconnecter</button>}
         </div>
       </nav>

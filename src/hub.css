@@ -42,3 +42,16 @@ body { font-size: 16px; }
   .hub-print-only th, .hub-print-only td { border: 1px solid #000; padding: 3mm 4mm; text-align: left; }
   .hub-print-only td { height: 11mm; }
 }
+
+/* Aide aux enseignants : encadrés, étapes, lexique */
+.hub-callout { background: var(--teal-bg); border: 1px solid var(--teal-border); border-radius: var(--radius-sm); padding: 0.75rem 1rem; color: var(--text); }
+.hub-callout p + p { margin-top: 6px; }
+.hub-callout-title { font-weight: 700; }
+.hub-steps { padding-left: 1.5rem; }
+.hub-steps li + li { margin-top: 0.4rem; }
+.hub-strong { font-weight: 700; }
+.hub-step-current { border-left: 6px solid var(--teal); }
+.hub-lexique > div { display: grid; grid-template-columns: minmax(8rem, 12rem) 1fr; gap: 0.75rem; padding: 6px 0; border-top: 1px solid var(--border); }
+.hub-lexique dd { margin: 0; }
+details.plai-card > summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; }
+@media (max-width: 480px) { .hub-lexique > div { grid-template-columns: 1fr; gap: 0; } }

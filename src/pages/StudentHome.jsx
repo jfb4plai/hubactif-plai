@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { apiPost } from '../lib/api.js'
 import Field from '../components/Field.jsx'
 import QrImage from '../components/QrImage.jsx'
@@ -25,7 +26,7 @@ export default function StudentHome() {
       write(keep ? codes : null)
     } catch (e) {
       setTasks(null)
-      setError(e.status === 404 ? 'Je ne reconnais pas ces codes. Vérifie-les avec ton enseignant.' : e.status === 429 ? 'Trop d’essais. Attends quelques minutes.' : 'Un problème est survenu. Réessaie.')
+      setError(e.status === 404 ? 'Je ne reconnais pas ces codes. Regarde bien chaque lettre et chaque chiffre, puis réessaie. Sinon, demande à ton enseignant.' : e.status === 429 ? 'Trop d’essais. Attends quelques minutes.' : 'Un problème est survenu. Réessaie.')
       if (e.status === 404) write(null) // on ne purge que si les codes sont réellement inconnus
     } finally {
       setBusy(false)
@@ -49,7 +50,8 @@ export default function StudentHome() {
     return (
       <div className="hub-student hub-stack">
         <h1 style={{ fontFamily: 'Arial, Helvetica, sans-serif' }}>Mes tâches</h1>
-        {tasks.length === 0 && <p>Tu n’as pas de tâche pour le moment.</p>}
+        {tasks.length === 0 && <p>Tu n’as pas de tâche pour le moment. Reviens plus tard, ou demande à ton enseignant.</p>}
+        {tasks.length > 0 && <p className="hub-help">Appuie sur « Ouvrir » : l’exercice s’ouvre dans l’application choisie par ton enseignant.</p>}
         {tasks.map((t) => (
           <div className="plai-card hub-stack" key={t.link_id}>
             <strong>{t.title}</strong>
@@ -85,6 +87,11 @@ export default function StudentHome() {
       </label>
       <p id="remember-help" className="hub-help">Coche seulement sur ton appareil personnel, pas sur un ordinateur partagé.</p>
       <button className="plai-btn" disabled={busy}>Voir mes tâches</button>
+      <details>
+        <summary>Je ne trouve pas mes codes</summary>
+        <p className="hub-help">Ton enseignant te les a donnés sur une carte ou une feuille. Le code de la classe est le même pour tous les élèves. Ton code à toi est différent de celui des autres. Si tu l’as perdu, demande à ton enseignant : il peut t’en donner un nouveau.</p>
+      </details>
+      <p className="hub-help">Vous êtes enseignant ? <Link to="/enseignant">Espace enseignant</Link> · <Link to="/aide">Aide pas à pas</Link></p>
     </form>
   )
 }

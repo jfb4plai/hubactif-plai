@@ -20,13 +20,13 @@ export default function StudentHome() {
   async function load(codes, keep) {
     setBusy(true); setError('')
     try {
-      const res = await apiPost('/api/student', { class_code: codes.classCode, student_code: codes.studentCode })
+      const res = await apiPost('/api/student', { class_code: codes.classCode, student_code: codes.studentCode }, { auth: false })
       setTasks(res.tasks)
       write(keep ? codes : null)
     } catch (e) {
       setTasks(null)
       setError(e.status === 404 ? 'Je ne reconnais pas ces codes. Vérifie-les avec ton enseignant.' : e.status === 429 ? 'Trop d’essais. Attends quelques minutes.' : 'Un problème est survenu. Réessaie.')
-      write(null)
+      if (e.status === 404) write(null) // on ne purge que si les codes sont réellement inconnus
     } finally {
       setBusy(false)
     }
@@ -80,10 +80,10 @@ export default function StudentHome() {
           placeholder="Ex. ABCD2345" value={studentCode} onChange={(e) => setStudentCode(e.target.value)} />
       </Field>
       <label className="hub-row">
-        <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} />
+        <input type="checkbox" aria-describedby="remember-help" checked={remember} onChange={(e) => setRemember(e.target.checked)} />
         Retenir mes codes sur cet appareil
       </label>
-      <p className="hub-help">Coche seulement sur ton appareil personnel, pas sur un ordinateur partagé.</p>
+      <p id="remember-help" className="hub-help">Coche seulement sur ton appareil personnel, pas sur un ordinateur partagé.</p>
       <button className="plai-btn" disabled={busy}>Voir mes tâches</button>
     </form>
   )

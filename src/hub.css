@@ -16,10 +16,17 @@ body { font-size: 16px; }
 .hub-grid { border-collapse: collapse; width: 100%; }
 .hub-grid th, .hub-grid td { border: 1px solid var(--border2); padding: 8px 10px; text-align: left; vertical-align: top; }
 .hub-student { font-family: Arial, Helvetica, sans-serif; font-size: 18px; line-height: 1.6; }
-.hub-student .plai-btn, .hub-student .plai-btn-ghost, .hub-student .plai-input { font-family: Arial, Helvetica, sans-serif; font-size: 18px; }
-.hub-sheet { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+.hub-student .plai-btn, .hub-student .plai-btn-ghost, .hub-student .plai-input,
+.hub-student .plai-label, .hub-student .hub-help, .hub-student .plai-error, .hub-student .plai-success { font-family: Arial, Helvetica, sans-serif; font-size: 18px; }
+.hub-sheet { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
 .hub-sheet-card { border: 1px dashed #666; padding: 12px; break-inside: avoid; text-align: center; }
+@media (max-width: 480px) {
+  .plai-nav { flex-wrap: wrap; height: auto; padding: 8px 1rem; gap: 4px; }
+  .plai-nav-actions { flex-wrap: wrap; }
+  .plai-container { padding: 0 1rem; }
+}
 @media print {
+  .hub-sheet { grid-template-columns: repeat(2, 1fr); }
   .plai-nav, .plai-footer, .hub-noprint { display: none !important; }
   body { background: #fff; }
 }

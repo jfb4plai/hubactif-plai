@@ -5,7 +5,8 @@ import { must } from '../lib/db.js'
 import { useAuth } from '../context/AuthContext.jsx'
 import Field from '../components/Field.jsx'
 import NoScoreBanner from '../components/NoScoreBanner.jsx'
-import { groupByDomain, isLate, formatDate, STATUS_ICON, STATUS_LABEL } from '../lib/matrix.js'
+import { groupByDomain, isLate, formatDate, formatDuration, STATUS_ICON, STATUS_LABEL } from '../lib/matrix.js'
+import { friendlyError } from '../lib/errors.js'
 
 export default function StudentFilePage() {
   const { classId, studentId } = useParams()
@@ -15,30 +16,39 @@ export default function StudentFilePage() {
   const [error, setError] = useState('')
   const [saved, setSaved] = useState('')
   const [newLink, setNewLink] = useState('')
+  const [busy, setBusy] = useState(false)
 
-  const load = useCallback(async () => {
-    try {
-      const student = must(await supabase.from('hub_students').select('*').eq('id', studentId).single())
-      const targets = must(await supabase.from('hub_targets')
-        .select('*, hub_assignments(id, title, due_at, app_id, hub_domains(label)), hub_events(*), hub_links(id, revoked, created_at)')
-        .eq('student_id', studentId))
-      const apps = must(await supabase.from('hub_apps_public').select('*'))
-      const noteRow = (await supabase.from('hub_notes').select('body').eq('student_id', studentId).maybeSingle()).data
-      setData({ student, targets, apps })
-      setNote(noteRow?.body ?? '')
-    } catch (e) { setError(e.message || 'Chargement impossible.') }
+  // Cibles et événements : rechargés après une régénération, sans toucher à la note en cours de saisie.
+  const loadTargets = useCallback(async () => {
+    const student = must(await supabase.from('hub_students').select('*').eq('id', studentId).single())
+    const targets = must(await supabase.from('hub_targets')
+      .select('*, hub_assignments(id, title, due_at, app_id, hub_domains(label)), hub_events(*)')
+      .eq('student_id', studentId))
+    const apps = must(await supabase.from('hub_apps_public').select('*'))
+    setData({ student, targets, apps })
   }, [studentId])
 
-  useEffect(() => { load() }, [load])
+  // Première charge uniquement : la note n'est lue qu'ici.
+  useEffect(() => {
+    (async () => {
+      try {
+        await loadTargets()
+        const noteRow = (await supabase.from('hub_notes').select('body').eq('student_id', studentId).maybeSingle()).data
+        setNote(noteRow?.body ?? '')
+      } catch (e) { setError(friendlyError(e)) }
+    })()
+  }, [loadTargets, studentId])
 
   async function saveNote() {
-    setSaved(''); setError('')
-    const { error } = await supabase.from('hub_notes').upsert(
-      { teacher_id: user.id, student_id: studentId, body: note, updated_at: new Date().toISOString() },
-      { onConflict: 'teacher_id,student_id' }
-    )
-    if (error) setError('Enregistrement impossible.')
-    else setSaved('Note enregistrée.')
+    setSaved(''); setError(''); setBusy(true)
+    try {
+      const { error } = await supabase.from('hub_notes').upsert(
+        { teacher_id: user.id, student_id: studentId, body: note, updated_at: new Date().toISOString() },
+        { onConflict: 'teacher_id,student_id' }
+      )
+      if (error) setError('Enregistrement impossible.')
+      else setSaved('Note enregistrée.')
+    } catch (e) { setError(friendlyError(e)) } finally { setBusy(false) }
   }
 
   async function regenerate(targetId) {
@@ -46,7 +56,7 @@ export default function StudentFilePage() {
     const { data: id, error } = await supabase.rpc('hub_regenerate_link', { p_target: targetId })
     if (error) return setError('Régénération impossible.')
     setNewLink(`${window.location.origin}/a/${id}`)
-    load()
+    try { await loadTargets() } catch (e) { setError(friendlyError(e)) }
   }
 
   if (error && !data) return <div className="plai-error" role="alert">{error}</div>
@@ -60,8 +70,8 @@ export default function StudentFilePage() {
       <p><Link to={`/enseignant/classes/${classId}`}>← Retour à la classe</Link></p>
       <h1 style={{ fontFamily: "'DM Serif Display', serif" }}>Élève <span className="hub-code">{student.code}</span></h1>
       <NoScoreBanner />
-      {error && <div className="plai-error" role="alert">{error}</div>}
-      {newLink && <div className="plai-success" role="status">Nouveau lien : <span className="hub-code">{newLink}</span></div>}
+      <div className={error ? 'plai-error' : undefined} role="alert">{error}</div>
+      <div className={newLink ? 'plai-success' : undefined} role="status" aria-live="polite">{newLink && <>Nouveau lien : <span className="hub-code">{newLink}</span></>}</div>
 
       {targets.length === 0 && <p className="plai-empty">Aucune tâche assignée à cet élève.</p>}
       {groupByDomain(targets).map((group) => (
@@ -84,7 +94,7 @@ export default function StudentFilePage() {
                     {events.map((ev) => (
                       <li key={ev.event_id}>
                         {formatDate(ev.occurred_at)} · {ev.status === 'completed' ? 'terminé' : 'commencé'}
-                        {ev.duration_s != null && ` · ${Math.round(ev.duration_s / 60)} min`}
+                        {ev.duration_s != null && ` · ${formatDuration(ev.duration_s)}`}
                         {ev.attempts != null && ` · ${ev.attempts} essai(s)`}
                         {(ev.indicators ?? []).map((ind) => ` · ${ind.label} : ${ind.value}`)}
                         {ev.detail_url && <> · <a href={ev.detail_url} target="_blank" rel="noreferrer">Voir dans l’app</a></>}
@@ -105,11 +115,11 @@ export default function StudentFilePage() {
           help="Visibles par vous seul. HubActif n’en tire aucune conclusion : votre lecture compte. N’écrivez pas le nom de l’élève.">
           <textarea id="note" rows={5} maxLength={2000} className="plai-input" aria-describedby="note-help"
             placeholder="Ex. A besoin que les consignes soient lues à voix haute ; réussit mieux le matin."
-            value={note} onChange={(e) => setNote(e.target.value)} />
+            value={note} onChange={(e) => { setNote(e.target.value); setSaved('') }} />
         </Field>
         <div className="hub-row">
-          <button className="plai-btn" onClick={saveNote}>Enregistrer la note</button>
-          {saved && <span role="status">{saved}</span>}
+          <button className="plai-btn" onClick={saveNote} disabled={busy}>Enregistrer la note</button>
+          <span role="status" aria-live="polite">{saved}</span>
         </div>
       </section>
     </div>

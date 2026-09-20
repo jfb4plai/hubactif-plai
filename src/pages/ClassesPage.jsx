@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase.js'
 import { must } from '../lib/db.js'
 import { useAuth } from '../context/AuthContext.jsx'
 import Field from '../components/Field.jsx'
+import { friendlyError } from '../lib/errors.js'
 import { generateCode, CLASS_CODE_LENGTH } from '../../shared/codes.js'
 
 export default function ClassesPage() {
@@ -16,7 +17,7 @@ export default function ClassesPage() {
 
   useEffect(() => {
     supabase.from('hub_classes').select('*').order('created_at', { ascending: false })
-      .then((r) => { try { setClasses(must(r)) } catch (e) { setError(e.message) } })
+      .then((r) => { try { setClasses(must(r)) } catch (e) { setError(friendlyError(e)) } })
   }, [])
 
   async function create(e) {
@@ -31,7 +32,7 @@ export default function ClassesPage() {
       }
       throw new Error('Impossible de générer un code de classe unique, réessayez.')
     } catch (err) {
-      setError(err.message)
+      setError(friendlyError(err))
     } finally {
       setBusy(false)
     }

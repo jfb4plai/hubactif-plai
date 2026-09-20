@@ -3,6 +3,8 @@ import { Link, useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase.js'
 import { must } from '../lib/db.js'
 import QrImage from '../components/QrImage.jsx'
+import { pickLiveLink } from '../lib/links.js'
+import { friendlyError } from '../lib/errors.js'
 
 export default function SheetPage() {
   const { assignmentId } = useParams()
@@ -15,19 +17,19 @@ export default function SheetPage() {
         const assignment = must(await supabase.from('hub_assignments')
           .select('id, title, due_at, class_id, hub_classes(name, class_code)').eq('id', assignmentId).single())
         const targets = must(await supabase.from('hub_targets')
-          .select('id, hub_students(code), hub_links(id, revoked, created_at)').eq('assignment_id', assignmentId))
-        const cards = targets.map((t) => {
-          const live = (t.hub_links ?? []).filter((l) => !l.revoked).sort((a, b) => b.created_at.localeCompare(a.created_at))[0]
-          return { code: t.hub_students.code, linkId: live?.id }
-        }).filter((c) => c.linkId).sort((a, b) => a.code.localeCompare(b.code))
-        setData({ assignment, cards })
-      } catch (e) { setError(e.message || 'Chargement impossible.') }
+          .select('id, hub_students(code), hub_links(id, revoked, created_at, expires_at)').eq('assignment_id', assignmentId))
+        const now = new Date()
+        const all = targets.map((t) => ({ code: t.hub_students.code, linkId: pickLiveLink(t.hub_links, now)?.id }))
+        const cards = all.filter((c) => c.linkId).sort((a, b) => a.code.localeCompare(b.code))
+        const missing = all.filter((c) => !c.linkId).map((c) => c.code).sort()
+        setData({ assignment, cards, missing })
+      } catch (e) { setError(friendlyError(e)) }
     })()
   }, [assignmentId])
 
   if (error) return <div className="plai-error" role="alert">{error}</div>
   if (!data) return <p className="plai-empty">Chargement…</p>
-  const { assignment, cards } = data
+  const { assignment, cards, missing } = data
   const origin = window.location.origin
 
   return (
@@ -36,6 +38,11 @@ export default function SheetPage() {
         <Link to={`/enseignant/classes/${assignment.class_id}`}>← Retour à la classe</Link>
         <button className="plai-btn" onClick={() => window.print()}>Imprimer</button>
       </div>
+      {missing.length > 0 && (
+        <div className="plai-error hub-noprint" role="alert">
+          {missing.length} élève(s) sans lien valide : régénérez leur lien depuis leur fiche. Codes : {missing.join(', ')}.
+        </div>
+      )}
       <h1 style={{ fontFamily: "'DM Serif Display', serif" }}>{assignment.title}</h1>
       <p>Espace élève : <strong>{origin}</strong> · code de classe <span className="hub-code">{assignment.hub_classes.class_code}</span></p>
       <div className="hub-sheet hub-student">

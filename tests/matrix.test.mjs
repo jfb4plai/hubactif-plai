@@ -46,3 +46,11 @@ test('libellés et icônes de statut couvrent les trois états', () => {
 test('formatDate en français de Belgique', () => {
   assert.match(formatDate('2026-10-01T12:00:00Z'), /^01\/10\/2026$/)
 })
+
+import { formatDuration } from '../src/lib/matrix.js'
+test('formatDuration : secondes sous 60 s, sinon minutes', () => {
+  assert.equal(formatDuration(45), '45 s')
+  assert.equal(formatDuration(59), '59 s')
+  assert.equal(formatDuration(60), '1 min')
+  assert.equal(formatDuration(150), '3 min')
+})

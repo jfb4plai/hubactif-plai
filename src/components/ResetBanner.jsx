@@ -21,7 +21,7 @@ export default function ResetBanner({ cls, onDone }) {
   }
 
   return (
-    <div className="plai-banner" role="alert" style={{ borderRadius: 6, margin: '1rem 0' }}>
+    <div className="plai-banner" role="region" aria-label="Remise à zéro de fin d’année" style={{ borderRadius: 6, margin: '1rem 0' }}>
       <p>
         Fin d’année : la remise à zéro est proposée dès le 15 juillet. Sans action de votre part, les données de
         cette classe seront supprimées automatiquement le 15 août.

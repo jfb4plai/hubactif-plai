@@ -7,6 +7,7 @@ import StudentsPanel from '../components/StudentsPanel.jsx'
 import ClassGrid from '../components/ClassGrid.jsx'
 import NoScoreBanner from '../components/NoScoreBanner.jsx'
 import QrImage from '../components/QrImage.jsx'
+import { friendlyError } from '../lib/errors.js'
 
 export default function ClassPage() {
   const { classId } = useParams()
@@ -25,7 +26,7 @@ export default function ClassPage() {
       const targets = ids.length ? must(await supabase.from('hub_targets').select('*').in('assignment_id', ids)) : []
       setData({ cls, students, assignments, domains, apps, targets })
     } catch (e) {
-      setError(e.message || 'Chargement impossible.')
+      setError(friendlyError(e))
     }
   }, [classId])
 

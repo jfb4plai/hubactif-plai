@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import Field from './Field.jsx'
+import { friendlyError } from '../lib/errors.js'
 import { addGeneratedCodes, addPastedCodes, regenerateCode, removeStudent } from '../lib/students.js'
 
 export default function StudentsPanel({ classId, students, onChange }) {
@@ -12,7 +13,7 @@ export default function StudentsPanel({ classId, students, onChange }) {
 
   async function run(fn) {
     setBusy(true); setError(''); setMessage('')
-    try { await fn(); await onChange() } catch (e) { setError(e.message || 'Une erreur est survenue.') } finally { setBusy(false) }
+    try { await fn(); await onChange() } catch (e) { setError(friendlyError(e)) } finally { setBusy(false) }
   }
 
   const generate = () => run(async () => {
@@ -47,8 +48,8 @@ export default function StudentsPanel({ classId, students, onChange }) {
         </Field>
         <button className="plai-btn-ghost" onClick={paste} disabled={busy || !pasted.trim()}>Ajouter ces codes</button>
 
-        {message && <div className="plai-success" role="status">{message}</div>}
-        {error && <div className="plai-error" role="alert">{error}</div>}
+        <div className={message ? 'plai-success' : undefined} role="status" aria-live="polite">{message}</div>
+        <div className={error ? 'plai-error' : undefined} role="alert">{error}</div>
       </div>
 
       {students.length === 0 ? (

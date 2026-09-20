@@ -22,6 +22,7 @@ export default function ClassGrid({ classId, students, assignments, targets, dom
           {domains.map((d) => <option key={d.id} value={d.id}>{d.label}</option>)}
         </select>
       </Field>
+      {shown.length === 0 ? <p className="plai-empty">Aucune tâche dans ce domaine.</p> : (
       <div className="hub-grid-wrap">
         <table className="hub-grid">
           <thead>
@@ -56,6 +57,7 @@ export default function ClassGrid({ classId, students, assignments, targets, dom
           </tbody>
         </table>
       </div>
+      )}
     </div>
   )
 }

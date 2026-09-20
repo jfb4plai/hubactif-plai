@@ -38,3 +38,5 @@ export function groupByDomain(targets) {
     .sort(([a], [b]) => (a === NONE) - (b === NONE) || a.localeCompare(b, 'fr'))
     .map(([domain, items]) => ({ domain, targets: items }))
 }
+
+export const formatDuration = (s) => (s < 60 ? `${s} s` : `${Math.round(s / 60)} min`)

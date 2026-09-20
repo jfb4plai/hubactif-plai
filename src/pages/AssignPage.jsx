@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase.js'
 import { must } from '../lib/db.js'
 import { apiPost } from '../lib/api.js'
 import { useAuth } from '../context/AuthContext.jsx'
 import Field from '../components/Field.jsx'
+import { friendlyError } from '../lib/errors.js'
 
 export default function AssignPage() {
   const { user } = useAuth()
@@ -26,6 +27,12 @@ export default function AssignPage() {
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
   const [newDomain, setNewDomain] = useState('')
+  const [ready, setReady] = useState(false)
+  const errorRef = useRef(null)
+  const resultRef = useRef(null)
+
+  useEffect(() => { if (result) resultRef.current?.focus() }, [result])
+  useEffect(() => { if (error) errorRef.current?.focus() }, [error])
 
   useEffect(() => {
     (async () => {
@@ -40,7 +47,7 @@ export default function AssignPage() {
         const byLabel = d.find((x) => x.label.toLowerCase() === suggested)
         if (byLabel) setDomainId(byLabel.id)
         if (!classId && c.length === 1) setClassId(c[0].id)
-      } catch (e) { setError(e.message) }
+      } catch (e) { setError(friendlyError(e)) } finally { setReady(true) }
     })()
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -49,12 +56,14 @@ export default function AssignPage() {
     setPicked(new Set())
     if (!classId) { setStudents([]); return }
     supabase.from('hub_students').select('id, code').eq('class_id', classId).eq('active', true).order('code')
-      .then((r) => { try { setStudents(must(r)) } catch (e) { setError(e.message) } })
+      .then((r) => { try { setStudents(must(r)) } catch (e) { setError(friendlyError(e)) } })
   }, [classId])
 
   async function addDomain() {
     const label = newDomain.trim()
     if (!label) return
+    setError('')
+    if (domains.some((d) => d.label.toLowerCase() === label.toLowerCase())) return setError('Ce domaine existe déjà.')
     const { data, error } = await supabase.from('hub_domains').insert({ teacher_id: user.id, label }).select().single()
     if (error) return setError(error.code === '23505' ? 'Ce domaine existe déjà.' : 'Ajout impossible.')
     setDomains((d) => [...d, data].sort((a, b) => a.label.localeCompare(b.label, 'fr')))
@@ -76,16 +85,19 @@ export default function AssignPage() {
       })
       setResult(res)
     } catch (err) {
-      setError(err.message)
+      setError(friendlyError(err))
     } finally {
       setBusy(false)
     }
   }
 
+  if (!ready) return <p className="plai-empty">Chargement…</p>
+
   if (result) {
     return (
       <div className="plai-card hub-stack">
-        <div className="plai-success" role="status">Tâche assignée à {result.links.length} élève(s).</div>
+        <h1 ref={resultRef} tabIndex={-1} style={{ fontFamily: "'DM Serif Display', serif" }}>Tâche assignée</h1>
+        <div className="plai-success" role="status" aria-live="polite">Tâche assignée à {result.links.length} élève(s).</div>
         <p>Chaque élève a maintenant un lien court et un QR code. Imprimez la feuille ou laissez-les retrouver leur tâche sur HubActif avec leurs codes.</p>
         <div className="hub-row">
           <Link className="plai-btn" style={{ textDecoration: 'none' }} to={`/enseignant/assignations/${result.assignment_id}/feuille`}>Feuille à imprimer</Link>
@@ -98,7 +110,7 @@ export default function AssignPage() {
   return (
     <form className="plai-card hub-stack" onSubmit={submit}>
       <h1 style={{ fontFamily: "'DM Serif Display', serif" }}>Assigner une tâche</h1>
-      {error && <div className="plai-error" role="alert">{error}</div>}
+      <div ref={errorRef} tabIndex={-1} className={error ? 'plai-error' : undefined} role="alert">{error}</div>
       {apps.length > 0 && !appId && params.get('app') && (
         <div className="plai-error" role="alert">L’app « {params.get('app')} » n’est pas enregistrée dans HubActif. Choisissez-en une dans la liste.</div>
       )}

@@ -2,13 +2,14 @@ import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase.js'
 import Field from '../components/Field.jsx'
+import { friendlyError } from '../lib/errors.js'
 
 const FR = {
   'Invalid login credentials': 'Adresse e-mail ou mot de passe incorrect.',
   'Email not confirmed': 'Adresse non confirmée : ouvrez le message reçu à l’inscription.',
   'User already registered': 'Un compte existe déjà avec cette adresse.',
 }
-const message = (e) => FR[e?.message] ?? e?.message ?? 'Une erreur est survenue.'
+const message = (e) => FR[e?.message] ?? friendlyError(e)
 
 const TITLES = {
   signin: 'Connexion enseignant',
@@ -18,7 +19,7 @@ const TITLES = {
 }
 
 export default function LoginPage() {
-  const [mode, setMode] = useState('signin') // signin | signup | reset | newpass
+  const [mode, setMode] = useState(() => (/type=recovery/.test(window.location.hash) ? 'newpass' : 'signin')) // signin | signup | reset | newpass
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -80,8 +81,8 @@ export default function LoginPage() {
               placeholder="8 caractères minimum" value={password} onChange={(e) => setPassword(e.target.value)} />
           </Field>
         )}
-        {error && <div className="plai-error" role="alert">{error}</div>}
-        {info && <div className="plai-success" role="status">{info}</div>}
+        <div className={error ? 'plai-error' : undefined} role="alert">{error}</div>
+        <div className={info ? 'plai-success' : undefined} role="status" aria-live="polite">{info}</div>
         <button className="plai-btn" type="submit" disabled={busy}>
           {{ signin: 'Se connecter', signup: 'Créer le compte', reset: 'Envoyer le lien', newpass: 'Enregistrer' }[mode]}
         </button>

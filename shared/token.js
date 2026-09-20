@@ -42,6 +42,8 @@ export async function signToken(payload, privateKeyB64) {
   return `${body}.${b64uEncode(new Uint8Array(sig))}`
 }
 
+// Une TokenError = jeton invalide (répondre 401). Toute autre exception (clé publique absente ou invalide)
+// = mauvaise configuration serveur (répondre 500, jamais 401).
 export async function verifyToken(token, publicKeyB64, nowSec = Math.floor(Date.now() / 1000)) {
   const parts = String(token ?? '').split('.')
   if (parts.length !== 2) throw new TokenError('malformed')

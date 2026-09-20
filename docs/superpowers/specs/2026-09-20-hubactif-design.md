@@ -72,6 +72,20 @@ HubActif est une app séparée, comme les autres apps PLAI : dépôt GitHub `jfb
 - Aucune clé ni donnée utilisateur dans le frontend ou dans un `console.log`.
 - Minimisation RGPD : le hub ne stocke ni production d'élève ni nom. Il stocke un résumé, des indicateurs et un lien de détail réservé à l'enseignant.
 
+## 6bis. Précisions d'implémentation (plan du 2026-09-20)
+
+- **Pas de Tailwind** : `plai-style.css` et `hub.css` (surcharges à 16 px minimum) suffisent.
+- **Clé d'app côté serveur** : les événements passent par un relais serveur dans chaque app (`api/hub-event.js`), qui porte la clé (variable d'environnement). Une clé dans un navigateur ne serait pas secrète.
+- **Limite de confiance** : un statut est déclaré par le client de l'app. La clé et le jeton empêchent les tiers de forger des événements, pas un élève technique qui rejoue son propre jeton. Enjeu faible (pas de note).
+- **Vérification du jeton** : le SDK décode le jeton (code élève, expiration) ; la signature est vérifiée par le hub à chaque événement. La vérification côté app reste facultative.
+- **Modèle de données** : `hub_events` référence `target_id` (qui implique assignation et élève) ; `hub_assignments` porte un `class_id` ; `hub_links.expires_at` = échéance + 30 jours.
+- **Débit** : les seuils sont larges (une classe entière partage l'IP de l'école). `/api/events` : par IP 3000/min (avant la recherche de la clé), par app 1200/min, par assignation 300/min. `/api/student` : 300 par 5 min par IP. `/api/go` : 300/min par IP. `/api/assignments` : par IP 120/min, par utilisateur 60/min. IP du client : `x-vercel-forwarded-for` ou `x-real-ip`, à défaut le dernier saut de `x-forwarded-for` (`api/_lib/ip.js`).
+- **SDK** (`sdk/hub-client.js`) : délai de 8 s par envoi ; nouvel essai sur 408, 429, 5xx et erreur réseau ; 401 réessayé tant que le jeton local est valide (20 essais au plus) puis abandonné ; jeton gardé en mémoire si le stockage est indisponible ; `flushQueue` protégé contre les appels simultanés ; file limitée à 50 événements.
+- **Schéma d'événement** (`shared/eventSchema.js`) : `detail_url` en http(s) sur l'origine de l'app, 200 caractères au plus, sans identifiants ; valeurs numériques d'indicateur dans ±1e9 ; aucun caractère de contrôle dans les textes ; libellés d'indicateur en double refusés.
+- **Enregistrement d'app** : `register-app.mjs` valide le slug et la `base_url` avant de contacter la base.
+- **QR de classe** : `/?c=<code de classe>` préremplit le code de classe ; l'élève tape seulement son code personnel.
+- **Jeton** : ES256 (ECDSA P-256), 120 h.
+
 ## 7. Flux d'une assignation
 
 1. L'enseignant crée sa classe (codes générés ou collés).

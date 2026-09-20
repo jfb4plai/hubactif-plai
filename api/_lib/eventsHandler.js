@@ -1,11 +1,15 @@
 import { verifyToken, TokenError } from '../../shared/token.js'
 import { validateEvent } from '../../shared/eventSchema.js'
+import { clientIp } from './ip.js'
 
 // Dépendances injectées (voir api/events.js pour le câblage réel) pour tester sans réseau ni base.
 export function createEventsHandler({ findAppByKeyHash, recordEvent, rateCheck, publicKey, hash, now = () => Date.now() }) {
   return async function handler(req, res) {
     res.setHeader('Cache-Control', 'no-store')
     if (req.method !== 'POST') return res.status(405).json({ error: 'Méthode non autorisée.' })
+
+    // Frein par IP AVANT tout appel base : évite qu'un flot de clés bidon sature les requêtes.
+    if (!(await rateCheck(`events:ip:${clientIp(req)}`, 600, 60))) return res.status(429).json({ error: 'Trop de requêtes.' })
 
     const appKey = req.headers['x-app-key']
     if (!appKey) return res.status(401).json({ error: 'Clé d’app requise.' })
@@ -25,6 +29,8 @@ export function createEventsHandler({ findAppByKeyHash, recordEvent, rateCheck, 
     }
     if (payload.app !== app.slug) return res.status(403).json({ error: 'Jeton émis pour une autre app.' })
 
+    if (!(await rateCheck(`events:${app.slug}:${payload.aid}`, 300, 60))) return res.status(429).json({ error: 'Trop de requêtes.' })
+
     const parsed = validateEvent(body, app)
     if (!parsed.ok) {
       // Journalisé sans donnée personnelle : app et motif seulement.
@@ -32,7 +38,7 @@ export function createEventsHandler({ findAppByKeyHash, recordEvent, rateCheck, 
       return res.status(400).json({ error: parsed.error })
     }
 
-    const status = await recordEvent({ target: payload.tid, assignment: payload.aid, appSlug: app.slug, ...parsed.value })
+    const status = await recordEvent({ ...parsed.value, target: payload.tid, assignment: payload.aid, appSlug: app.slug })
     if (status === 'unknown_target') return res.status(404).json({ error: 'Assignation introuvable.' })
     return res.status(200).json({ status })
   }

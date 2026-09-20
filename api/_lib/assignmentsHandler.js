@@ -1,4 +1,5 @@
 import { validateAssignmentInput, isUuid } from '../../shared/assignmentSchema.js'
+import { clientIp } from './ip.js'
 
 const KNOWN_ERRORS = {
   class_not_owned: [403, 'Classe introuvable.'],
@@ -10,6 +11,8 @@ export function createAssignmentsHandler({ requireUser, findApp, createAssignmen
   return async function handler(req, res) {
     res.setHeader('Cache-Control', 'no-store')
     if (req.method !== 'POST') return res.status(405).json({ error: 'Méthode non autorisée.' })
+
+    if (!(await rateCheck(`assign:ip:${clientIp(req)}`, 120, 60))) return res.status(429).json({ error: 'Trop de requêtes.' })
 
     const user = await requireUser(req, res)
     if (!user) return
@@ -24,7 +27,8 @@ export function createAssignmentsHandler({ requireUser, findApp, createAssignmen
     if (!parsed.ok) return res.status(400).json({ error: parsed.error })
 
     try {
-      const rows = await createAssignment({ teacher: user.id, app: body.app_id, ...parsed.value })
+      const rows = await createAssignment({ ...parsed.value, teacher: user.id, app: body.app_id })
+      if (!Array.isArray(rows) || rows.length === 0) return res.status(400).json({ error: KNOWN_ERRORS.no_students[1] })
       return res.status(200).json({
         assignment_id: rows[0].out_assignment_id,
         links: rows.map((r) => ({ student_code: r.out_student_code, link_id: r.out_link_id })),

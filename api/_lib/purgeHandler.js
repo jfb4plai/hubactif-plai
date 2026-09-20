@@ -10,6 +10,7 @@ function safeEqual(a, b) {
 export function createPurgeHandler({ purge, secret }) {
   return async function handler(req, res) {
     res.setHeader('Cache-Control', 'no-store')
+    if (req.method !== 'GET' && req.method !== 'POST') return res.status(405).json({ error: 'Méthode non autorisée.' })
     // Vercel Cron envoie « Authorization: Bearer <CRON_SECRET> ». Comparaison en temps constant.
     const received = String(req.headers.authorization ?? '')
     if (!secret || !safeEqual(received, `Bearer ${secret}`)) {

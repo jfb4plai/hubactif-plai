@@ -1,4 +1,5 @@
 import { normalizeCode } from '../../shared/codes.js'
+import { clientIp } from './ip.js'
 
 const NOT_FOUND = { error: 'Codes non reconnus.' }
 
@@ -7,10 +8,9 @@ export function createStudentHandler({ studentTasks, rateCheck }) {
     res.setHeader('Cache-Control', 'no-store')
     if (req.method !== 'POST') return res.status(405).json({ error: 'Méthode non autorisée.' })
 
-    const ip = String(req.headers['x-forwarded-for'] ?? '').split(',')[0].trim() || req.socket?.remoteAddress || 'unknown'
     // 300 essais / 5 min / IP : une classe entière derrière l'IP de l'école passe, une attaque par
     // dictionnaire sur 31^8 codes non.
-    if (!(await rateCheck(`student:${ip}`, 300, 300))) {
+    if (!(await rateCheck(`student:${clientIp(req)}`, 300, 300))) {
       return res.status(429).json({ error: 'Trop d’essais. Réessaie dans quelques minutes.' })
     }
 

@@ -11,11 +11,12 @@ const app = { slug: 'dictee', base_url: 'https://dictee.example.org', indicator_
 async function setup(over = {}) {
   const keys = await generateKeyPair()
   const calls = []
+  const rates = []
   const handler = createEventsHandler({
     findAppByKeyHash: async (h) => (h === 'hash:good' ? (over.app ?? app) : null),
     recordEvent: async (e) => { calls.push(e); return over.result ?? 'recorded' },
-    rateCheck: async () => over.allowed ?? true,
-    publicKey: keys.publicKey,
+    rateCheck: async (key, max, win) => { rates.push([key, max, win]); return typeof over.allowed === 'function' ? over.allowed(key) : (over.allowed ?? true) },
+    publicKey: 'publicKey' in over ? over.publicKey : keys.publicKey,
     hash: (k) => `hash:${k}`,
     now: () => NOW,
   })
@@ -23,10 +24,10 @@ async function setup(over = {}) {
     signToken({ tid: 't1', aid: 'a1', code: 'ABCD2345', app: 'dictee', exp: NOW / 1000 + 3600, ...payload }, key)
   const call = async ({ key = 'good', method = 'POST', body }) => {
     const res = fakeRes()
-    await handler(fakeReq({ method, headers: key ? { 'x-app-key': key } : {}, body }), res)
+    await handler(fakeReq({ method, headers: key ? { 'x-app-key': key, 'x-real-ip': '7.7.7.7' } : { 'x-real-ip': '7.7.7.7' }, body }), res)
     return res
   }
-  return { call, calls, token }
+  return { call, calls, token, rates }
 }
 
 const okBody = (token, extra = {}) => ({ event_id: EID, token, status: 'completed', duration_s: 120, indicators: [{ label: 'mots réussis', value: 14 }], ...extra })
@@ -104,4 +105,56 @@ test('200 doublon renvoyé tel quel (idempotence)', async () => {
 test('404 cible inconnue', async () => {
   const { call, token } = await setup({ result: 'unknown_target' })
   assert.equal((await call({ body: okBody(await token()) })).statusCode, 404)
+})
+
+test('clés et seuils de débit exacts : IP, app, assignation (dans cet ordre)', async () => {
+  const { call, token, rates } = await setup()
+  await call({ body: okBody(await token()) })
+  assert.deepEqual(rates, [
+    ['events:ip:7.7.7.7', 600, 60],
+    ['events:dictee', 1200, 60],
+    ['events:dictee:a1', 300, 60],
+  ])
+})
+
+test('429 par IP avant toute recherche de clé en base', async () => {
+  let looked = 0
+  const keys = await generateKeyPair()
+  const handler = createEventsHandler({
+    findAppByKeyHash: async () => { looked++; return app },
+    recordEvent: async () => 'recorded',
+    rateCheck: async (k) => !k.startsWith('events:ip:'),
+    publicKey: keys.publicKey, hash: (k) => k, now: () => NOW,
+  })
+  const res = fakeRes()
+  await handler(fakeReq({ headers: { 'x-app-key': 'good' } }), res)
+  assert.equal(res.statusCode, 429)
+  assert.equal(looked, 0)
+})
+
+test('429 par assignation (troisième seau) sans enregistrer', async () => {
+  const { call, token, calls } = await setup({ allowed: (k) => k !== 'events:dictee:a1' })
+  assert.equal((await call({ body: okBody(await token()) })).statusCode, 429)
+  assert.equal(calls.length, 0)
+})
+
+test('corps tableau : 401 (jeton absent), sans plantage', async () => {
+  const { call, calls } = await setup()
+  const res = await call({ body: [1, 2] })
+  assert.equal(res.statusCode, 401)
+  assert.equal(calls.length, 0)
+})
+
+test('clé publique absente : exception propagée (500), pas 401', async () => {
+  const { call, token } = await setup({ publicKey: undefined })
+  const body = okBody(await token())
+  await assert.rejects(() => call({ body }))
+})
+
+test('l’identité de confiance vient du jeton et de l’app', async () => {
+  const s = await setup()
+  await s.call({ body: okBody(await s.token()) })
+  assert.equal(s.calls[0].target, 't1')
+  assert.equal(s.calls[0].assignment, 'a1')
+  assert.equal(s.calls[0].appSlug, 'dictee')
 })

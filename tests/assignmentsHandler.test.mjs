@@ -12,16 +12,17 @@ const rows = [
   { out_assignment_id: 'as1', out_student_code: 'EFGH6789', out_link_id: '0123456789abcdef' },
 ]
 
-function setup({ user = { id: 'u1' }, foundApp = app, create, allowed = true } = {}) {
+function setup({ user = { id: 'u1' }, foundApp = app, create, allowed = true, rowsResult = rows } = {}) {
   const created = []
+  const rates = []
   const handler = createAssignmentsHandler({
     requireUser: async (req, res) => { if (!user) { res.status(401).json({ error: 'Connexion requise.' }); return null } return user },
     findApp: async () => foundApp,
-    createAssignment: create ?? (async (a) => { created.push(a); return rows }),
-    rateCheck: async () => allowed,
+    createAssignment: create ?? (async (a) => { created.push(a); return rowsResult }),
+    rateCheck: async (key, max, win) => { rates.push([key, max, win]); return allowed },
   })
-  const call = async (body, method = 'POST') => { const res = fakeRes(); await handler(fakeReq({ method, body }), res); return res }
-  return { call, created }
+  const call = async (body, method = 'POST') => { const res = fakeRes(); await handler(fakeReq({ method, body, headers: { 'x-real-ip': '7.7.7.7' } }), res); return res }
+  return { call, created, rates }
 }
 
 test('405 si ce n’est pas un POST', async () => {
@@ -68,4 +69,40 @@ test('403 classe qui n’appartient pas à l’enseignant, 400 sans élève', as
 
 test('429 si limite de débit dépassée', async () => {
   assert.equal((await setup({ allowed: false }).call(good)).statusCode, 429)
+})
+
+test('clés de débit : IP avant requireUser, puis utilisateur', async () => {
+  const { call, rates } = setup()
+  await call(good)
+  assert.deepEqual(rates, [['assign:ip:7.7.7.7', 120, 60], ['assign:u1', 60, 60]])
+})
+
+test('429 par IP sans appeler requireUser', async () => {
+  let asked = 0
+  const handler = createAssignmentsHandler({
+    requireUser: async () => { asked++; return { id: 'u1' } },
+    findApp: async () => app, createAssignment: async () => rows,
+    rateCheck: async () => false,
+  })
+  const res = fakeRes()
+  await handler(fakeReq({ body: good }), res)
+  assert.equal(res.statusCode, 429)
+  assert.equal(asked, 0)
+})
+
+test('400 si la création ne renvoie aucune ligne (pas de TypeError)', async () => {
+  for (const rowsResult of [[], null, {}]) {
+    const res = await setup({ rowsResult }).call(good)
+    assert.equal(res.statusCode, 400)
+    assert.match(res.body.error, /Aucun élève actif/)
+  }
+})
+
+test('anti mass-assignment : teacher, app, id du corps ne passent pas', async () => {
+  const { call, created } = setup()
+  await call({ ...good, teacher: 'pirate', app: 'autre', id: 'x', assignment: 'y' })
+  assert.equal(created[0].teacher, 'u1')
+  assert.equal(created[0].app, APP_ID)
+  assert.equal(created[0].id, undefined)
+  assert.equal(created[0].assignment, undefined)
 })

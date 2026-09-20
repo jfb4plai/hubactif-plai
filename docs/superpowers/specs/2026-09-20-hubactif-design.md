@@ -65,7 +65,7 @@ HubActif est une app séparée, comme les autres apps PLAI : dépôt GitHub `jfb
 
 ## 6. Sécurité
 
-- **Jeton signé** (ES256 ou Ed25519). Clé privée dans les variables d'environnement Vercel du hub seulement. Clé publique dans les apps. Contenu : assignation, code élève, app, expiration. Durée courte (12 h, à confirmer).
+- **Jeton signé** (ES256 ou Ed25519). Clé privée dans les variables d'environnement Vercel du hub seulement. Clé publique dans les apps. Contenu : assignation, code élève, app, expiration. Durée de vie : 120 h (5 jours), pour couvrir un week-end. Le jeton est refabriqué à chaque clic sur le lien court : les congés plus longs sont couverts par la validité du lien, pas par celle du jeton.
 - **Événements** : acceptés uniquement avec un jeton valide **et** la clé de l'app émettrice (stockée hachée, révocable par app). Un élève ne peut pas fabriquer son statut.
 - **Liens** : un lien court opaque par élève et par assignation. Quiconque possède le lien agit comme cet élève, pour cette seule tâche. Le lien est révocable et régénérable par l'enseignant. Option de QR de classe partagé (l'élève tape son code une fois) pour les groupes où l'anonymat des feuilles individuelles pose problème.
 - **RLS** : chaque table lue par l'enseignant est filtrée par `auth.uid()` (directement ou via la classe). Les élèves n'ont aucun accès direct à la base : une fonction serveur (service role) vérifie leurs codes et ne renvoie que leurs assignations. Les événements s'écrivent uniquement par l'API.
@@ -147,14 +147,29 @@ Guidage contextuel obligatoire sur chaque champ : label précis, placeholder con
 - Variables d'environnement dans Vercel uniquement : clés Supabase, clé privée de signature.
 - Vignette dans `portail-plai/src/data/apps.ts` (dépôt et déploiement séparés), avec un lien « Mes tâches » pour l'entrée élève.
 
-## 14. Questions ouvertes
+## 14. Décisions et questions ouvertes
 
-1. Durée de vie du jeton (12 h proposé) et durée de validité d'un lien court après l'échéance.
-2. Liste initiale des domaines. À construire avec le terrain pour éviter un vocabulaire importé de l'extérieur de la FWB.
-3. Choix des apps pilotes (Dictée interactive, LexiActif, FlashPLAI proposées) et forme exacte du bouton « Assigner via le hub » dans chacune.
-4. Durée de conservation des événements et procédure de suppression d'une classe (RGPD). À valider avec le cadre du Pôle.
-5. Le contenu des indicateurs d'une app pourrait-il permettre de ré-identifier un élève (libellés libres) ? Contrainte à documenter pour les développeurs d'apps.
-6. Nom de projet Vercel `hubactif-plai` : disponibilité non vérifiée.
+### Décidé
+- **Apps pilotes** : Dictée interactive, LexiActif, FlashPLAI.
+- **Durée du jeton** : 120 h (§6).
+- **Cycle de vie des données** : le hub ne contient que des codes (aucun nom). Une **remise à zéro annuelle est proposée à partir du 15 juillet** (bandeau dans l'espace enseignant, déclenchée par l'enseignant, une action qui supprime élèves, cibles, événements, liens et notes de la classe). Pendant l'année, l'enseignant gère librement ses classes : ajout et suppression de classes, ajout et retrait d'élèves. Supprimer une classe supprime en cascade tout ce qui s'y rattache. De nouveaux codes sont générés chaque année. Les fiches locales des apps ne sont pas touchées par cette remise à zéro (elles relèvent de chaque app).
+- **Nom de projet Vercel** `hubactif-plai` : pas de crainte, vérifié à la création du projet.
+
+### Règle sur les indicateurs (ré-identification)
+Les apps envoient des indicateurs sous forme de paires libellé/valeur. Pour qu'un indicateur ne devienne pas un canal de données personnelles, l'API applique un schéma strict :
+- le libellé est choisi dans une liste déclarée par l'app à son enregistrement (≤ 40 caractères) ;
+- la valeur est un nombre ou un texte court (≤ 20 caractères) ;
+- aucun texte libre saisi ou produit par l'élève (phrase dictée, réponse ouverte, prénom cité) ;
+- le lien de détail est une URL vers l'app, réservée à l'enseignant.
+Un événement hors schéma est rejeté et journalisé sans donnée personnelle.
+
+### Encore ouvert
+1. **Durée de validité d'un lien court après l'échéance** : 30 jours proposé, révocable.
+2. **Liste initiale des domaines** (voir la proposition de départ ci-dessous, à confirmer).
+3. **Forme du bouton « Assigner via le hub »** dans chacune des trois apps pilotes.
+4. **Filet de sécurité de la remise à zéro** : purge automatique si l'enseignant n'a rien fait à une date donnée (par exemple fin août), ou seulement le rappel.
+
+Proposition de domaines pour la v1, tirée des trois apps pilotes, extensible par l'enseignant : Orthographe, Vocabulaire, Lecture, Grammaire, Mémorisation et révision. Cette liste est un point de départ à affiner, pas un référentiel officiel FWB.
 
 ## 15. Questions challengeantes (réponses de conception)
 

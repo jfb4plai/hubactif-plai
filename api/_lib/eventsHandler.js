@@ -9,7 +9,7 @@ export function createEventsHandler({ findAppByKeyHash, recordEvent, rateCheck, 
     if (req.method !== 'POST') return res.status(405).json({ error: 'Méthode non autorisée.' })
 
     // Frein par IP AVANT tout appel base : évite qu'un flot de clés bidon sature les requêtes.
-    if (!(await rateCheck(`events:ip:${clientIp(req)}`, 600, 60))) return res.status(429).json({ error: 'Trop de requêtes.' })
+    if (!(await rateCheck(`events:ip:${clientIp(req)}`, 3000, 60))) return res.status(429).json({ error: 'Trop de requêtes.' })
 
     const appKey = req.headers['x-app-key']
     if (!appKey) return res.status(401).json({ error: 'Clé d’app requise.' })

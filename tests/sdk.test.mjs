@@ -258,3 +258,18 @@ test('uuid par défaut : repli si crypto.randomUUID est absent (ou crypto absent
   assert.match(sent[0].event_id, /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/)
   assert.ok(sent[1].event_id.length >= 16)
 })
+
+test('file contenant des entrées corrompues : elles sont ignorées, flushQueue ne lève pas', async () => {
+  const { client, storage } = make()
+  storage.setItem('hub_queue', '[null,1,{"event_id":"e1"}]')
+  assert.equal(await client.flushQueue(), 0)
+  assert.deepEqual(JSON.parse(storage.getItem('hub_queue')), [])
+})
+
+test('setItem qui lève mais getItem renvoie un vieux jeton : le jeton mémoire frais gagne', () => {
+  const old = mkToken({ ...payload, aid: 'old', exp: NOW / 1000 - 10 })
+  const storage = { getItem: () => old, setItem: () => { throw new Error('quota') }, removeItem: () => {} }
+  const { client } = make({ storage })
+  const ctx = client.captureToken()
+  assert.equal(ctx.assignmentId, 'a1')
+})

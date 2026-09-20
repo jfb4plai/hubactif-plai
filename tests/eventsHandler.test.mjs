@@ -111,7 +111,7 @@ test('clés et seuils de débit exacts : IP, app, assignation (dans cet ordre)',
   const { call, token, rates } = await setup()
   await call({ body: okBody(await token()) })
   assert.deepEqual(rates, [
-    ['events:ip:7.7.7.7', 600, 60],
+    ['events:ip:7.7.7.7', 3000, 60],
     ['events:dictee', 1200, 60],
     ['events:dictee:a1', 300, 60],
   ])

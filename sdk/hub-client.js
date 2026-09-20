@@ -64,10 +64,14 @@ export function createHubClient({
 
   // { code, assignmentId, targetId, token, expiresAt } ou null (absent ou expiré).
   function getContext() {
-    const token = safe(() => storage.getItem(TOKEN_KEY)) || memToken
-    const p = token ? decodeToken(token) : null
-    if (!p || typeof p.exp !== 'number' || p.exp * 1000 <= now()) return null
-    return { token, code: p.code, assignmentId: p.aid, targetId: p.tid, expiresAt: p.exp * 1000 }
+    // Jeton stocké d'abord ; s'il est absent, illisible ou expiré, repli sur le jeton mémoire (stockage en écriture impossible).
+    for (const token of [safe(() => storage.getItem(TOKEN_KEY)), memToken]) {
+      const p = token ? decodeToken(token) : null
+      if (p && typeof p.exp === 'number' && p.exp * 1000 > now()) {
+        return { token, code: p.code, assignmentId: p.aid, targetId: p.tid, expiresAt: p.exp * 1000 }
+      }
+    }
+    return null
   }
 
   function clearContext() {
@@ -110,7 +114,8 @@ export function createHubClient({
 
   const readQueue = () => {
     const q = safe(() => JSON.parse(storage.getItem(QUEUE_KEY) || '[]'), [])
-    return Array.isArray(q) ? q : []
+    // Entrées corrompues ignorées : elles feraient lever flushQueue indéfiniment.
+    return Array.isArray(q) ? q.filter((e) => e && typeof e === 'object' && !Array.isArray(e) && typeof e.event_id === 'string') : []
   }
   const writeQueue = (q) => {
     try { storage.setItem(QUEUE_KEY, JSON.stringify(q.slice(-MAX_QUEUE))); return true } catch { return false }

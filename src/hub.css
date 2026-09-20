@@ -19,7 +19,7 @@ body { font-size: 16px; }
 .hub-student .plai-btn, .hub-student .plai-btn-ghost, .hub-student .plai-input,
 .hub-student .plai-label, .hub-student .hub-help, .hub-student .plai-error, .hub-student .plai-success { font-family: Arial, Helvetica, sans-serif; font-size: 18px; }
 .hub-sheet { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
-.hub-sheet-card { border: 1px dashed #666; padding: 12px; break-inside: avoid; text-align: center; }
+.hub-sheet-card { border: 1px dashed #666; padding: 12px; break-inside: avoid; text-align: center; overflow-wrap: anywhere; min-width: 0; }
 @media (max-width: 480px) {
   .plai-nav { flex-wrap: wrap; height: auto; padding: 8px 1rem; gap: 4px; }
   .plai-nav-actions { flex-wrap: wrap; }

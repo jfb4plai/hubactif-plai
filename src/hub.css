@@ -1,0 +1,23 @@
+/* HubActif : la charte PLAI descend à 13-15 px par endroits ; la règle PLAI impose 16 px minimum. */
+body { font-size: 16px; }
+.plai-container { max-width: 1000px; }
+.plai-label, .plai-input, .plai-btn, .plai-btn-ghost, .plai-nav-link,
+.plai-error, .plai-success, .plai-banner, .plai-footer { font-size: 16px; }
+.plai-btn, .plai-btn-ghost { min-height: 44px; }
+.plai-nav-logo { font-size: 20px; }
+.hub-help { font-size: 16px; color: var(--text2); margin-top: 4px; }
+.hub-row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.hub-stack > * + * { margin-top: 1rem; }
+.hub-code { font-family: 'Courier New', monospace; font-size: 18px; letter-spacing: 1px; font-weight: 700; }
+.hub-status { display: inline-flex; gap: 6px; align-items: center; font-weight: 600; }
+.hub-grid-wrap { overflow-x: auto; }
+.hub-grid { border-collapse: collapse; width: 100%; }
+.hub-grid th, .hub-grid td { border: 1px solid var(--border2); padding: 8px 10px; text-align: left; vertical-align: top; }
+.hub-student { font-family: Arial, Helvetica, sans-serif; font-size: 18px; line-height: 1.6; }
+.hub-student .plai-btn, .hub-student .plai-btn-ghost, .hub-student .plai-input { font-family: Arial, Helvetica, sans-serif; font-size: 18px; }
+.hub-sheet { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+.hub-sheet-card { border: 1px dashed #666; padding: 12px; break-inside: avoid; text-align: center; }
+@media print {
+  .plai-nav, .plai-footer, .hub-noprint { display: none !important; }
+  body { background: #fff; }
+}

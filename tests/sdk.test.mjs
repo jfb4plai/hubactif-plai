@@ -97,3 +97,164 @@ test('clearContext efface le jeton (poste partagé)', () => {
   client.clearContext()
   assert.equal(client.getContext(), null)
 })
+
+// ---- Robustesse (revue) ----
+const okRes = { ok: true, status: 200 }
+
+test('jeton sans remplissage base64 est décodé', () => {
+  const t = mkToken({ ...payload, code: 'ABCD2345XY' })
+  assert.ok(!t.split('.')[0].includes('='))
+  const { client } = make({ token: t })
+  assert.equal(client.captureToken().code, 'ABCD2345XY')
+})
+
+test('jeton non JSON ou géant => pas de contexte, sans exception', () => {
+  assert.equal(make({ token: 'pas-du-json.sig' }).client.captureToken(), null)
+  assert.equal(make({ token: mkToken({ ...payload, pad: 'x'.repeat(3000) }) }).client.captureToken(), null)
+})
+
+test('stockage qui lève : repli mémoire, clearContext efface tout', () => {
+  const boom = () => { throw new Error('x') }
+  const { client } = make({ storage: { getItem: boom, setItem: boom, removeItem: boom } })
+  assert.equal(client.captureToken().code, 'ABCD2345')
+  assert.equal(client.getContext().code, 'ABCD2345')
+  client.clearContext()
+  assert.equal(client.getContext(), null)
+})
+
+test('history indéfini : pas d’exception', () => {
+  const client = createHubClient({
+    storage: memStorage(), location: { href: `https://a.org/x?t=${mkToken(payload)}` },
+    history: undefined, fetchImpl: async () => okRes, now: () => NOW, uuid: () => 'u',
+  })
+  assert.equal(client.captureToken().code, 'ABCD2345')
+})
+
+test('replaceState conserve history.state', () => {
+  const replaced = []
+  const client = createHubClient({
+    storage: memStorage(), location: { href: `https://a.org/x?t=${mkToken(payload)}` },
+    history: { state: { route: 1 }, replaceState: (...a) => replaced.push(a) },
+    fetchImpl: async () => okRes, now: () => NOW, uuid: () => 'u',
+  })
+  client.captureToken()
+  assert.deepEqual(replaced[0][0], { route: 1 })
+})
+
+test('file d’attente plafonnée à 50', async () => {
+  let n = 0
+  const storage = memStorage()
+  const client = createHubClient({
+    storage, location: { href: `https://a.org/?t=${mkToken(payload)}` }, history: {},
+    fetchImpl: async () => { throw new Error('off') }, now: () => NOW, uuid: () => `u${n++}`,
+  })
+  client.captureToken()
+  for (let i = 0; i < 55; i++) await client.reportEvent({ status: 'started' })
+  const q = JSON.parse(storage.getItem('hub_queue'))
+  assert.equal(q.length, 50)
+  assert.equal(q[49].event_id, 'u54')
+})
+
+test('file corrompue (non tableau) => traitée comme vide', async () => {
+  const { client, storage } = make()
+  storage.setItem('hub_queue', '{"a":1}')
+  assert.equal(await client.flushQueue(), 0)
+})
+
+test('file impossible à écrire => storage_unavailable', async () => {
+  const storage = memStorage()
+  const { client } = make({ storage, fetchImpl: async () => { throw new Error('off') } })
+  client.captureToken()
+  const orig = storage.setItem
+  storage.setItem = (k, v) => { if (k === 'hub_queue') throw new Error('quota'); return orig(k, v) }
+  assert.deepEqual(await client.reportEvent({ status: 'started' }), { sent: false, queued: false, reason: 'storage_unavailable' })
+})
+
+test('429 et 408 : conservés pour réessai', async () => {
+  const statuses = [429, 408]
+  const { client, storage } = make({ fetchImpl: async () => ({ ok: false, status: statuses.shift() }) })
+  storage.setItem('hub_queue', JSON.stringify([{ event_id: 'e1' }, { event_id: 'e2' }]))
+  assert.equal(await client.flushQueue(), 2)
+})
+
+test('401 avec jeton local valide : conservé (compteur), abandonné au 20e essai', async () => {
+  const { client, storage } = make({ fetchImpl: async () => ({ ok: false, status: 401 }) })
+  storage.setItem('hub_queue', JSON.stringify([{ event_id: 'e1', token: mkToken(payload) }]))
+  assert.equal(await client.flushQueue(), 1)
+  assert.equal(JSON.parse(storage.getItem('hub_queue'))[0].tries, 1)
+  for (let i = 0; i < 18; i++) await client.flushQueue()
+  assert.equal(JSON.parse(storage.getItem('hub_queue'))[0].tries, 19)
+  assert.equal(await client.flushQueue(), 0)
+})
+
+test('401 avec jeton expiré ou absent : abandonné', async () => {
+  const { client, storage } = make({ fetchImpl: async () => ({ ok: false, status: 401 }) })
+  storage.setItem('hub_queue', JSON.stringify([
+    { event_id: 'e1', token: mkToken({ ...payload, exp: NOW / 1000 - 5 }) }, { event_id: 'e2' },
+  ]))
+  assert.equal(await client.flushQueue(), 0)
+})
+
+test('flushQueue concurrents : le second ne renvoie rien', async () => {
+  let calls = 0
+  let release
+  const gate = new Promise((r) => { release = r })
+  const { client, storage } = make({ fetchImpl: async () => { calls++; await gate; return okRes } })
+  storage.setItem('hub_queue', JSON.stringify([{ event_id: 'e1' }, { event_id: 'e2' }]))
+  const first = client.flushQueue()
+  assert.equal(await client.flushQueue(), 2)
+  release()
+  assert.equal(await first, 0)
+  assert.equal(calls, 2)
+})
+
+test('flushQueue en course avec reportEvent : l’événement ajouté n’est pas perdu', async () => {
+  let release
+  const gate = new Promise((r) => { release = r })
+  let mode = 'flush'
+  const { client, storage } = make({
+    fetchImpl: async () => { if (mode === 'flush') { await gate; return okRes } throw new Error('off') },
+  })
+  client.captureToken()
+  storage.setItem('hub_queue', JSON.stringify([{ event_id: 'old' }]))
+  const flushing = client.flushQueue()
+  mode = 'report'
+  assert.equal((await client.reportEvent({ status: 'started' })).queued, true)
+  release()
+  assert.equal(await flushing, 1)
+  assert.deepEqual(JSON.parse(storage.getItem('hub_queue')).map((e) => e.event_id), ['uuid-1'])
+})
+
+test('délai dépassé : requête abandonnée, événement mis en file', async () => {
+  const storage = memStorage()
+  const client = createHubClient({
+    storage, location: { href: `https://a.org/x?t=${mkToken(payload)}` }, history: {},
+    fetchImpl: (url, init) => new Promise((_, rej) => init.signal.addEventListener('abort', () => rej(new Error('aborted')))),
+    now: () => NOW, uuid: () => 'u', timeoutMs: 20,
+  })
+  client.captureToken()
+  assert.deepEqual(await client.reportEvent({ status: 'started' }), { sent: false, queued: true })
+  assert.equal(JSON.parse(storage.getItem('hub_queue')).length, 1)
+})
+
+test('uuid par défaut : repli si crypto.randomUUID est absent (ou crypto absent)', async () => {
+  const sent = []
+  const orig = Object.getOwnPropertyDescriptor(globalThis, 'crypto')
+  const setCrypto = (v) => Object.defineProperty(globalThis, 'crypto', { value: v, configurable: true, writable: true })
+  try {
+    for (const fake of [{ getRandomValues: (a) => { a.fill(7); return a } }, undefined]) {
+      setCrypto(fake)
+      const client = createHubClient({
+        storage: memStorage(), location: { href: `https://a.org/?t=${mkToken(payload)}` }, history: {},
+        fetchImpl: async (u, init) => { sent.push(JSON.parse(init.body)); return okRes }, now: () => NOW,
+      })
+      client.captureToken()
+      await client.reportEvent({ status: 'started' })
+    }
+  } finally {
+    Object.defineProperty(globalThis, 'crypto', orig)
+  }
+  assert.equal(sent.length, 2)
+  assert.match(sent[0].event_id, /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/)
+  assert.ok(sent[1].event_id.length >= 16)
+})

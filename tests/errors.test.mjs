@@ -24,3 +24,8 @@ test('autre : message générique, jamais le texte anglais', () => {
   assert.equal(friendlyError({ message: 'permission denied for table x' }), 'Une erreur est survenue. Réessayez.')
   assert.equal(friendlyError(null), 'Une erreur est survenue. Réessayez.')
 })
+
+test('userError : le message français voulu est conservé', async () => {
+  const { friendlyError, userError } = await import('../src/lib/errors.js')
+  assert.equal(friendlyError(userError('Impossible de générer un code unique, réessayez.')), 'Impossible de générer un code unique, réessayez.')
+})

@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase.js'
 import { must } from '../lib/db.js'
 import { useAuth } from '../context/AuthContext.jsx'
 import Field from '../components/Field.jsx'
-import { friendlyError } from '../lib/errors.js'
+import { friendlyError, userError } from '../lib/errors.js'
 import { generateCode, CLASS_CODE_LENGTH } from '../../shared/codes.js'
 
 export default function ClassesPage() {
@@ -30,7 +30,7 @@ export default function ClassesPage() {
         if (!error) return navigate(`/enseignant/classes/${data.id}`)
         if (error.code !== '23505') throw error
       }
-      throw new Error('Impossible de générer un code de classe unique, réessayez.')
+      throw userError('Impossible de générer un code de classe unique, réessayez.')
     } catch (err) {
       setError(friendlyError(err))
     } finally {

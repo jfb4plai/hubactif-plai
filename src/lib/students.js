@@ -1,4 +1,5 @@
 import { supabase } from './supabase.js'
+import { userError } from './errors.js'
 import { generateCode, parseCodeList, isValidCode } from '../../shared/codes.js'
 
 const UNIQUE_VIOLATION = '23505'
@@ -36,7 +37,7 @@ export async function regenerateCode(studentId) {
     if (!error) return
     if (error.code !== UNIQUE_VIOLATION) throw error
   }
-  throw new Error('Impossible de générer un code unique, réessayez.')
+  throw userError('Impossible de générer un code unique, réessayez.')
 }
 
 export async function removeStudent(studentId) {

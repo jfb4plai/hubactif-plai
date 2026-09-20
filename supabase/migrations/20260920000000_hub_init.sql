@@ -161,6 +161,9 @@ revoke insert, update, delete on hub_assignments, hub_targets, hub_links, hub_ev
 
 -- Vue publique des apps (sans key_hash ni libellés) : le client affiche les noms d'apps.
 create view hub_apps_public as select id, slug, name, base_url from hub_apps where not revoked;
+-- Une vue simple est modifiable et contourne la RLS de hub_apps : retirer d'abord tous les droits par défaut
+-- (Supabase les accorde à anon et authenticated), puis n'accorder que la lecture aux enseignants connectés.
+revoke all on hub_apps_public from anon, authenticated;
 grant select on hub_apps_public to authenticated;
 
 -- ============ Fonctions ============

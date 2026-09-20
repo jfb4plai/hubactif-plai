@@ -4,6 +4,8 @@ body { font-size: 16px; }
 .plai-label, .plai-input, .plai-btn, .plai-btn-ghost, .plai-nav-link,
 .plai-error, .plai-success, .plai-banner, .plai-footer { font-size: 16px; }
 .plai-btn, .plai-btn-ghost { min-height: 44px; }
+.plai-nav-link { min-height: 44px; display: inline-flex; align-items: center; }
+.plai-input { min-height: 44px; }
 .plai-nav-logo { font-size: 20px; }
 .hub-help { font-size: 16px; color: var(--text2); margin-top: 4px; }
 .hub-row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }

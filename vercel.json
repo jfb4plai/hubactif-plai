@@ -3,6 +3,6 @@
   "rewrites": [
     { "source": "/a/:id", "destination": "/api/go?id=:id" },
     { "source": "/api/(.*)", "destination": "/api/$1" },
-    { "source": "/(.*)", "destination": "/index.html" }
+    { "source": "/((?!api/|@|src/|node_modules/|__vite)[^.]*)", "destination": "/index.html" }
   ]
 }

@@ -7,6 +7,7 @@ import ClassesPage from './pages/ClassesPage.jsx'
 import ClassPage from './pages/ClassPage.jsx'
 import AssignPage from './pages/AssignPage.jsx'
 import SheetPage from './pages/SheetPage.jsx'
+import StudentFilePage from './pages/StudentFilePage.jsx'
 
 export default function App() {
   return (
@@ -18,6 +19,7 @@ export default function App() {
           <Route path="/enseignant/classes/:classId" element={<ProtectedRoute><ClassPage /></ProtectedRoute>} />
           <Route path="/enseignant/assigner" element={<ProtectedRoute><AssignPage /></ProtectedRoute>} />
           <Route path="/enseignant/assignations/:assignmentId/feuille" element={<ProtectedRoute><SheetPage /></ProtectedRoute>} />
+          <Route path="/enseignant/classes/:classId/eleves/:studentId" element={<ProtectedRoute><StudentFilePage /></ProtectedRoute>} />
           <Route path="*"element={<Navigate to="/enseignant" replace />} />
         </Routes>
       </Layout>

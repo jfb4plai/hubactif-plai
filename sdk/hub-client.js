@@ -79,7 +79,7 @@ export function createHubClient({
     safe(() => storage.removeItem(TOKEN_KEY))
   }
 
-  // Adresse de la page « Assigner » du hub, pour le bouton « Assigner via le hub » de l'app.
+  // Adresse de la page « Assigner » du hub, pour le bouton « Assigner via HubActif » de l'app.
   function assignUrl({ app, title, link, type, domain, classId }) {
     const u = new URL('/enseignant/assigner', hubUrl)
     const params = { app, title, link, type, domain, class: classId }

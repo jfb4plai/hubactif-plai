@@ -99,7 +99,7 @@ export default function AssignPage() {
       <div className="plai-card hub-stack">
         <h1 style={{ fontFamily: "'DM Serif Display', serif" }}>Assigner une tâche</h1>
         <Callout title="Aucune app PLAI n’est encore branchée à HubActif">
-          <p>Une app « branchée » affiche un bouton <strong>« Assigner via le hub »</strong> : un clic, et la tâche est donnée à votre classe. Les premières apps sont branchées une à une.</p>
+          <p>Une app « branchée » affiche un bouton <strong>« Assigner via HubActif »</strong> : un clic, et la tâche est donnée à votre classe. Les premières apps sont branchées une à une.</p>
           <p>En attendant, préparez vos classes et vos codes : vous n’aurez rien à refaire.</p>
         </Callout>
         <div><Link className="plai-btn-ghost" style={{ textDecoration: 'none' }} to="/enseignant">Retour à mes classes</Link></div>
@@ -129,7 +129,7 @@ export default function AssignPage() {
     <form className="plai-card hub-stack" onSubmit={submit}>
       <h1 style={{ fontFamily: "'DM Serif Display', serif" }}>Assigner une tâche</h1>
       <Callout title="Le plus simple : passer par l’app">
-        <p>Dans l’app PLAI qui contient la tâche, cliquez sur <strong>« Assigner via le hub »</strong> : cette page s’ouvre alors déjà remplie, il ne reste qu’à choisir la classe.</p>
+        <p>Dans l’app PLAI qui contient la tâche, cliquez sur <strong>« Assigner via HubActif »</strong> : cette page s’ouvre alors déjà remplie, il ne reste qu’à choisir la classe.</p>
         <p>Vous pouvez aussi la remplir vous-même. Il vous faut alors le lien de la tâche (voir plus bas comment le trouver).</p>
       </Callout>
       <div ref={errorRef} tabIndex={-1} className={error ? 'plai-error' : undefined} role="alert">{error}</div>

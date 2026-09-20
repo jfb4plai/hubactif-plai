@@ -71,11 +71,11 @@ export default function ClassPage() {
           <div className="hub-row">
             <Link className="plai-btn" style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}
               to={`/enseignant/assigner?class=${classId}`}>Assigner une tâche</Link>
-            <span className="hub-help">Astuce : depuis l’app PLAI, le bouton « Assigner via le hub » remplit ce formulaire à votre place.</span>
+            <span className="hub-help">Astuce : depuis l’app PLAI, le bouton « Assigner via HubActif » remplit ce formulaire à votre place.</span>
           </div>
         ) : (
           <Callout title="Aucune app PLAI n’est encore branchée à HubActif">
-            <p>Une app « branchée » affiche un bouton <strong>« Assigner via le hub »</strong> : un clic, et la tâche est donnée à votre classe. Les premières apps sont branchées une à une.</p>
+            <p>Une app « branchée » affiche un bouton <strong>« Assigner via HubActif »</strong> : un clic, et la tâche est donnée à votre classe. Les premières apps sont branchées une à une.</p>
             <p>En attendant, votre classe et vos codes sont prêts : vous n’aurez rien à refaire.</p>
           </Callout>
         )}

@@ -38,7 +38,7 @@ hub.reportEvent({
   detail_url: 'https://url-de-l-app/eleve/42', // réservé à l'enseignant
 })
 
-// Bouton « Assigner via le hub » (côté enseignant)
+// Bouton « Assigner via HubActif » (côté enseignant)
 location.href = hub.assignUrl({ app: '<slug>', title: 'Dictée n°3', link: location.href, type: 'dictée', domain: 'Orthographe' })
 
 // Poste partagé : à la fin de la séance

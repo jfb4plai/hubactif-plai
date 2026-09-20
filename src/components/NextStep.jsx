@@ -34,11 +34,11 @@ export default function NextStep({ classId, students, assignments, targets, hasA
         </>
       )}
       {current === 'assign' && !hasApps && (
-        <p>Votre classe est prête. Aucune app PLAI n’est encore branchée à HubActif : dès qu’une app l’est, elle affiche un bouton « Assigner via le hub ». Un clic, et la tâche est donnée à cette classe. Revenez ici à ce moment-là.</p>
+        <p>Votre classe est prête. Aucune app PLAI n’est encore branchée à HubActif : dès qu’une app l’est, elle affiche un bouton « Assigner via HubActif ». Un clic, et la tâche est donnée à cette classe. Revenez ici à ce moment-là.</p>
       )}
       {current === 'assign' && hasApps && (
         <>
-          <p>Le plus simple : ouvrez l’app PLAI qui contient la tâche et cliquez sur « Assigner via le hub ». Le formulaire s’ouvre déjà rempli.</p>
+          <p>Le plus simple : ouvrez l’app PLAI qui contient la tâche et cliquez sur « Assigner via HubActif ». Le formulaire s’ouvre déjà rempli.</p>
           <div><Link className="plai-btn" style={btn} to={`/enseignant/assigner?class=${classId}`}>Ou remplir le formulaire ici</Link></div>
         </>
       )}

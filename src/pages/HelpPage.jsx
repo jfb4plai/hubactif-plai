@@ -44,7 +44,7 @@ const FAQ = [
   },
   {
     q: 'Quelles apps fonctionnent avec HubActif ?',
-    a: <>Les apps PLAI qui ont été « branchées » sur HubActif. Une app branchée affiche un bouton « Assigner via le hub ». HubActif démarre : les premières apps sont branchées une à une. Tant qu’aucune app n’est branchée, vous pouvez déjà préparer vos classes et vos codes.</>,
+    a: <>Les apps PLAI qui ont été « branchées » sur HubActif. Une app branchée affiche un bouton « Assigner via HubActif ». HubActif démarre, et les apps sont branchées une à une : <strong>LexiActif</strong> l’est déjà ; Dictée interactive et FlashPLAI suivront. Pour une app pas encore branchée, vous continuez à l’utiliser comme d’habitude.</>,
   },
   {
     q: 'Que se passe-t-il en fin d’année ?',
@@ -88,7 +88,7 @@ export default function HelpPage() {
           <li><strong>Créez votre compte</strong> avec votre adresse professionnelle : <Link to="/enseignant/connexion">Espace enseignant</Link>. Vous recevrez un e-mail de confirmation à ouvrir.</li>
           <li><strong>Créez une classe.</strong> HubActif lui donne un code de classe.</li>
           <li><strong>Ajoutez vos élèves</strong> : « Générer les codes » fabrique un code par élève. Imprimez la liste et écrivez les prénoms à la main.</li>
-          <li><strong>Donnez une tâche</strong> : dans une app PLAI branchée, cliquez sur « Assigner via le hub ».</li>
+          <li><strong>Donnez une tâche</strong> : dans une app PLAI branchée, cliquez sur « Assigner via HubActif ».</li>
           <li><strong>Donnez accès aux élèves</strong> : imprimez la feuille de QR codes, ou dictez le code de classe et laissez chacun taper son code personnel.</li>
           <li><strong>Suivez</strong> : la grille de la classe montre où en est chacun. Cliquez sur un code pour voir la fiche de l’élève.</li>
         </ol>

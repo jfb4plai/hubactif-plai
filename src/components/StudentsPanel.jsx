@@ -3,13 +3,15 @@ import { Link } from 'react-router-dom'
 import Field from './Field.jsx'
 import Callout from './Callout.jsx'
 import { friendlyError } from '../lib/errors.js'
-import { addGeneratedCodes, addPastedCodes, reactivateStudent, regenerateCode, removeStudent } from '../lib/students.js'
+import { addGeneratedCodes, addPastedCodes, addSequentialCodes, reactivateStudent, regenerateCode, removeStudent } from '../lib/students.js'
+import { normalizePrefix } from '../../shared/codes.js'
 
 // `students` = tous les élèves de la classe (actifs et retirés) ; `cls` = { name, class_code } pour la liste imprimable.
 export default function StudentsPanel({ classId, cls, students: all, onChange }) {
   const students = all.filter((s) => s.active)
   const removed = all.filter((s) => !s.active)
   const [count, setCount] = useState(10)
+  const [prefix, setPrefix] = useState('')
   const [pasted, setPasted] = useState('')
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
@@ -21,8 +23,17 @@ export default function StudentsPanel({ classId, cls, students: all, onChange })
   }
 
   const generate = () => run(async () => {
-    const n = await addGeneratedCodes(classId, Math.min(Math.max(Number(count) || 0, 1), 60))
-    setMessage(`${n} code(s) ajouté(s).`)
+    const n = Math.min(Math.max(Number(count) || 0, 1), 60)
+    const cleanPrefix = normalizePrefix(prefix)
+    if (!cleanPrefix) {
+      setMessage(`${await addGeneratedCodes(classId, n)} code(s) ajouté(s).`)
+      return
+    }
+    const { added, conflicts } = await addSequentialCodes(classId, cleanPrefix, n, all.map((s) => s.code))
+    const parts = [`${added.length} code(s) ajouté(s) : ${added.slice(0, 3).join(', ')}${added.length > 3 ? '…' : ''}.`]
+    if (conflicts.length) parts.push(`Déjà pris par une autre classe de HubActif (refusés) : ${conflicts.join(', ')}. Ajoutez une précision à votre préfixe (par exemple la matière : ${cleanPrefix}-FR).`)
+    setMessage(parts.join(' '))
+    setPrefix(cleanPrefix)
   })
 
   const paste = () => run(async () => {
@@ -54,10 +65,15 @@ export default function StudentsPanel({ classId, cls, students: all, onChange })
           <input id="count" type="number" min="1" max="60" className="plai-input" style={{ maxWidth: 140 }}
             aria-describedby="count-help" placeholder="Ex. 24" value={count} onChange={(e) => setCount(e.target.value)} />
         </Field>
+        <Field id="prefix" label="Préfixe des codes (conseillé)"
+          help="Numéro FASE de l’école, un tiret, puis le nom de la classe. HubActif ajoute un numéro d’ordre : 4821-2B-01, 4821-2B-02… Deux enseignants ne se retrouvent alors jamais avec le même code. Laissez vide pour des codes au hasard (ex. K7Q2MX9A). Attribuez les numéros au hasard, pas dans l’ordre alphabétique : le numéro ne doit pas trahir l’élève.">
+          <input id="prefix" className="plai-input" style={{ maxWidth: 260 }} maxLength={24} autoCapitalize="characters"
+            aria-describedby="prefix-help" placeholder="Ex. 4821-2B" value={prefix} onChange={(e) => setPrefix(e.target.value)} />
+        </Field>
         <button className="plai-btn" onClick={generate} disabled={busy}>Générer les codes</button>
 
         <Field id="pasted" label="Ou coller des codes existants"
-          help="Facultatif : si vos élèves ont déjà des codes dans une autre app PLAI (ex. Mathipulatifs), collez-les, un par ligne : ils gardent leurs habitudes. Un code déjà pris par une autre classe de HubActif est refusé : dans ce cas, cliquez plutôt sur « Générer les codes ».">
+          help="Facultatif : si vos élèves ont déjà des codes dans une autre app PLAI (ex. Mathipulatifs), collez-les, un par ligne : ils gardent leurs habitudes. Des codes très courants (ELEVE01…) risquent d’être déjà pris par une autre classe et seront refusés : ajoutez alors votre numéro FASE et votre classe devant (4821-2B-ELEVE01), ou utilisez « Générer les codes » avec un préfixe.">
           <textarea id="pasted" rows={4} className="plai-input" aria-describedby="pasted-help"
             placeholder={'ELEVE01\nELEVE02\nELEVE03'} value={pasted} onChange={(e) => setPasted(e.target.value)} />
         </Field>

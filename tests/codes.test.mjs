@@ -31,3 +31,24 @@ test('isValidCode', () => {
   assert.ok(!isValidCode('AB'))
   assert.ok(!isValidCode('A B C'))
 })
+
+import { normalizePrefix, nextSequenceStart, sequentialCodes, MAX_PREFIX_LENGTH } from '../shared/codes.js'
+
+test('normalizePrefix : majuscules, espaces en tirets, caractères parasites retirés', () => {
+  assert.equal(normalizePrefix('4821 2b'), '4821-2B')
+  assert.equal(normalizePrefix('  fase_4821 -- 2b! '), 'FASE-4821-2B')
+  assert.equal(normalizePrefix('-x-'), 'X')
+  assert.equal(normalizePrefix(null), '')
+})
+
+test('sequentialCodes : numéros sur 2 chiffres au minimum, valides', () => {
+  assert.deepEqual(sequentialCodes('4821-2B', 3), ['4821-2B-01', '4821-2B-02', '4821-2B-03'])
+  assert.equal(sequentialCodes('A', 1, 100)[0], 'A-100')
+  for (const c of sequentialCodes('4821-2B', 24)) assert.ok(isValidCode(c))
+  assert.ok(isValidCode(`${'X'.repeat(MAX_PREFIX_LENGTH)}-99`))
+})
+
+test('nextSequenceStart : reprend après le plus grand numéro du même préfixe', () => {
+  assert.equal(nextSequenceStart([], '4821-2B'), 1)
+  assert.equal(nextSequenceStart(['4821-2B-01', '4821-2B-07', '4821-3A-20', 'ELEVE01'], '4821-2B'), 8)
+})

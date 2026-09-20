@@ -1,6 +1,6 @@
 import { supabase } from './supabase.js'
 import { userError } from './errors.js'
-import { generateCode, parseCodeList, isValidCode } from '../../shared/codes.js'
+import { generateCode, parseCodeList, isValidCode, normalizePrefix, nextSequenceStart, sequentialCodes } from '../../shared/codes.js'
 
 const UNIQUE_VIOLATION = '23505'
 
@@ -13,6 +13,24 @@ export async function addGeneratedCodes(classId, count) {
     else if (error.code !== UNIQUE_VIOLATION) throw error
   }
   return added
+}
+
+// Codes lisibles « PRÉFIXE-01, PRÉFIXE-02… » (ex. numéro FASE + classe). Reprend après le dernier numéro déjà utilisé.
+// Retourne { added, conflicts } ; un code déjà pris par une autre classe est signalé, pas ajouté.
+export async function addSequentialCodes(classId, rawPrefix, count, existingCodes) {
+  const prefix = normalizePrefix(rawPrefix)
+  const codes = sequentialCodes(prefix, count, nextSequenceStart(existingCodes, prefix))
+  const invalid = codes.find((c) => !isValidCode(c))
+  if (invalid) throw userError('Préfixe trop long ou invalide : utilisez des lettres, des chiffres et des tirets (24 caractères au maximum).')
+  const added = []
+  const conflicts = []
+  for (const code of codes) {
+    const { error } = await supabase.from('hub_students').insert({ class_id: classId, code })
+    if (!error) added.push(code)
+    else if (error.code === UNIQUE_VIOLATION) conflicts.push(code)
+    else throw error
+  }
+  return { added, conflicts }
 }
 
 // Adopte une liste de codes existants. `conflicts` = codes déjà pris (autre classe), `invalid` = format refusé.

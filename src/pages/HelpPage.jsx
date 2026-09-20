@@ -7,6 +7,10 @@ const FAQ = [
     a: <>Pour protéger vos élèves : HubActif ne connaît que des codes (par exemple <span className="hub-code">K7Q2MX9A</span>). Vous seul savez qui se cache derrière chaque code. Imprimez la liste des codes depuis la page de la classe : elle a une colonne vide où écrire les prénoms <strong>à la main, sur papier</strong>. Gardez cette feuille avec votre cahier de classe.</>,
   },
   {
+    q: 'Quels codes choisir pour mes élèves ?',
+    a: <>Le plus simple : dans « Préfixe des codes », tapez le <strong>numéro FASE de votre école</strong>, un tiret, puis <strong>le nom de la classe</strong> (par exemple <span className="hub-code">4821-2B</span>). HubActif fabrique <span className="hub-code">4821-2B-01</span>, <span className="hub-code">4821-2B-02</span>… Ces codes sont uniques par construction : deux enseignants ne se retrouvent jamais avec le même. Attribuez les numéros au hasard (pas dans l’ordre alphabétique) pour que le numéro ne trahisse pas l’élève. Sans préfixe, HubActif génère des codes au hasard, comme <span className="hub-code">K7Q2MX9A</span>, tout aussi valables.</>,
+  },
+  {
     q: 'Qu’est-ce que le code de classe et le code personnel ?',
     a: <>Le <strong>code de classe</strong> est le même pour toute la classe (6 caractères). Le <strong>code personnel</strong> est propre à chaque élève (8 caractères). L’élève tape les deux sur la page d’accueil pour retrouver ses tâches. Deux codes, c’est plus sûr : un code personnel seul serait plus facile à deviner.</>,
   },

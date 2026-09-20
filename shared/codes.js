@@ -38,3 +38,29 @@ export function parseCodeList(text) {
 
 // Même contrainte que le check SQL de hub_students.code.
 export const isValidCode = (code) => /^[A-Z0-9_-]{3,32}$/.test(code)
+
+// ---- Codes lisibles : préfixe (numéro FASE + classe) + numéro d'ordre. Uniques par construction. ----
+export const MAX_PREFIX_LENGTH = 24
+
+// « 4821 2b » -> « 4821-2B » : majuscules, espaces en tirets, caractères non permis retirés.
+export function normalizePrefix(raw) {
+  return String(raw ?? '').trim().toUpperCase()
+    .replace(/[\s_]+/g, '-').replace(/[^A-Z0-9-]/g, '').replace(/-+/g, '-').replace(/^-|-$/g, '')
+}
+
+// Premier numéro libre pour ce préfixe, d'après les codes déjà présents (évite les doublons quand on clique deux fois).
+export function nextSequenceStart(existingCodes, prefix) {
+  const start = `${prefix}-`
+  let max = 0
+  for (const code of existingCodes) {
+    const rest = code.startsWith(start) ? code.slice(start.length) : ''
+    if (/^[0-9]+$/.test(rest)) max = Math.max(max, Number(rest))
+  }
+  return max + 1
+}
+
+// sequentialCodes('4821-2B', 3) -> ['4821-2B-01', '4821-2B-02', '4821-2B-03']
+export function sequentialCodes(prefix, count, start = 1) {
+  const width = Math.max(2, String(start + count - 1).length)
+  return Array.from({ length: count }, (_, i) => `${prefix}-${String(start + i).padStart(width, '0')}`)
+}

@@ -3,3 +3,7 @@ dist
 .env
 .env.local
 .vercel
+
+# Dependances et secrets (ajoute 2026-10-04)
+.env.*
+!.env*.example
